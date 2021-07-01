@@ -3,7 +3,7 @@
 # https://github.com/P3TERX/warp.sh
 # Description: Cloudflare WARP configuration script
 # System Required: Debian, Ubuntu, CentOS
-# Version: beta5
+# Version: beta6
 #
 # MIT License
 #
@@ -28,7 +28,7 @@
 # SOFTWARE.
 #
 
-shVersion='beta5'
+shVersion='beta6'
 FontColor_Red="\033[31m"
 FontColor_Green="\033[32m"
 FontColor_LightYellow="\033[1;33m"
@@ -71,7 +71,7 @@ TestIPv4_2='9.9.9.9'
 TestIPv6_1='2001:4860:4860::8888'
 TestIPv6_2='2620:fe::fe'
 
-Instal_WARP_Client_Debian() {
+Install_Requirements_Debian() {
     if [[ ! $(command -v lsb_release) ]]; then
         apt update
         apt install lsb-release -y
@@ -80,6 +80,14 @@ Instal_WARP_Client_Debian() {
         apt update
         apt install gnupg -y
     fi
+    if [[ ! $(apt list 2>/dev/null | grep apt-transport-https | grep installed) ]]; then
+        apt update
+        apt install apt-transport-https -y
+    fi
+}
+
+Instal_WARP_Client_Debian() {
+    Install_Requirements_Debian
     curl https://pkg.cloudflareclient.com/pubkey.gpg | apt-key add -
     echo "deb http://pkg.cloudflareclient.com/ $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/cloudflare-client.list
     apt update
@@ -87,14 +95,7 @@ Instal_WARP_Client_Debian() {
 }
 
 Instal_WARP_Client_Ubuntu() {
-    if [[ ! $(command -v lsb_release) ]]; then
-        apt update
-        apt install lsb-release -y
-    fi
-    if [[ ! $(command -v gpg) ]]; then
-        apt update
-        apt install gnupg -y
-    fi
+    Install_Requirements_Debian
     curl https://pkg.cloudflareclient.com/pubkey.gpg | apt-key add -
     #echo "deb http://pkg.cloudflareclient.com/ $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/cloudflare-client.list
     echo "deb http://pkg.cloudflareclient.com/ focal main" | tee /etc/apt/sources.list.d/cloudflare-client.list
@@ -105,7 +106,12 @@ Instal_WARP_Client_Ubuntu() {
 Instal_WARP_Client_CentOS() {
     CentOS_Version=$(cat /etc/redhat-release | sed -r 's/.* ([0-9]+)\..*/\1/')
     rpm -ivh http://pkg.cloudflareclient.com/cloudflare-release-el${CentOS_Version}.rpm
-    yum install cloudflare-warp -y
+    if [[ $? = 0 ]]; then
+        yum install cloudflare-warp -y
+    else
+        echo -e "${MSG_error} This operating system is not supported."
+        exit 1
+    fi
 }
 
 Check_WARP_Client() {
@@ -157,7 +163,8 @@ Uninstall_WARP_Client() {
 }
 
 Init_WARP_Client() {
-    if [[ ! $(command -v warp-cli) ]]; then
+    Check_WARP_Client
+    if [[ ${WARP_Client_SelfStart} != enabled || ${WARP_Client_Status} != active ]]; then
         Instal_WARP_Client
     fi
     yes | warp-cli
@@ -256,12 +263,22 @@ Install_WireGuardTools_Debian() {
         apt update
         apt install lsb-release -y
     fi
-    if [[ $(lsb_release -sr) = 10 ]]; then
+    DebianVer=$(lsb_release -sr | cut -d. -f1)
+    case ${DebianVer} in
+    10)
         echo "deb http://deb.debian.org/debian $(lsb_release -sc)-backports main" | tee /etc/apt/sources.list.d/backports.list
-    elif [[ $(lsb_release -sr) < 10 ]]; then
+        ;;
+    9)
         echo "deb http://deb.debian.org/debian/ unstable main" | tee /etc/apt/sources.list.d/unstable.list
         echo -e "Package: *\nPin: release a=unstable\nPin-Priority: 150\n" | tee /etc/apt/preferences.d/limit-unstable
-    fi
+        ;;
+    *)
+        if [[ ${DebianVer} -lt 9 ]]; then
+            echo -e "${MSG_error} This operating system is not supported."
+            exit 1
+        fi
+        ;;
+    esac
     apt update
     apt install iproute2 openresolv -y
     apt install wireguard-tools --no-install-recommends -y
