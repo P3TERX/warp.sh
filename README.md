@@ -42,7 +42,7 @@ menu            Chinese special features menu
 
 - [Cloudflare WARP](https://1.1.1.1/)
 - [WireGuard](https://www.wireguard.com/)
-- [ViRb3/wgcf](ViRb3/wgcf)
+- [ViRb3/wgcf](https://github.com/ViRb3/wgcf)
 
 ## License
 
