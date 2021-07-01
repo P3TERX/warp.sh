@@ -3,7 +3,7 @@
 # https://github.com/P3TERX/warp.sh
 # Description: Cloudflare WARP configuration script
 # System Required: Debian, Ubuntu, CentOS
-# Version: beta3
+# Version: beta5
 #
 # MIT License
 #
@@ -28,7 +28,7 @@
 # SOFTWARE.
 #
 
-shVersion='beta3'
+shVersion='beta5'
 FontColor_Red="\033[31m"
 FontColor_Green="\033[32m"
 FontColor_LightYellow="\033[1;33m"
@@ -315,7 +315,7 @@ Install_WireGuardTools() {
 Install_WireGuardGo() {
     KernelVer1=$(uname -r | awk -F . '{print $1}')
     KernelVer2=$(uname -r | awk -F . '{print $2}')
-    if [[ ${KernelVer1} -le 5 && ${KernelVer2} -lt 6 ]]; then
+    if [[ ${KernelVer1} -lt 5 || ${KernelVer2} -lt 6 ]]; then
         curl -fsSL git.io/wireguard-go.sh | bash
     fi
 }
@@ -327,7 +327,7 @@ Check_WireGuard() {
 
 Install_WireGuard() {
     Check_WireGuard
-    if [[ ${WireGuard_SelfStart} != enabled ]]; then
+    if [[ ${WireGuard_SelfStart} != enabled || ${WireGuard_Status} != active ]]; then
         Install_WireGuardTools
         Install_WireGuardGo
     fi
@@ -415,7 +415,7 @@ Check_Network_Status_IPv4() {
 }
 
 Check_Network_Status_IPv6() {
-    if ping -c1 ${TestIPv6_1} >/dev/null 2>&1 || ping -c1 ${TestIPv6_2} >/dev/null 2>&1; then
+    if ping6 -c1 ${TestIPv6_1} >/dev/null 2>&1 || ping6 -c1 ${TestIPv6_2} >/dev/null 2>&1; then
         IPv6Status='on'
     else
         IPv6Status='off'
