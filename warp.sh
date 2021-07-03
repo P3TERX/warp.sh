@@ -3,7 +3,7 @@
 # https://github.com/P3TERX/warp.sh
 # Description: Cloudflare WARP configuration script
 # System Required: Debian, Ubuntu, CentOS
-# Version: beta7
+# Version: beta8
 #
 # MIT License
 #
@@ -28,7 +28,7 @@
 # SOFTWARE.
 #
 
-shVersion='beta7'
+shVersion='beta8'
 FontColor_Red="\033[31m"
 FontColor_Green="\033[32m"
 FontColor_LightYellow="\033[1;33m"
@@ -677,10 +677,10 @@ Print_WARP_Client_Status() {
     Check_WARP_Client_Status
     Check_WARP_Proxy_Status
     echo -e "
- ------------------------
+ ----------------------------
  WARP Client\t: ${WARP_Client_Status_en}
  SOCKS5 Status\t: ${WARP_Proxy_Status_en}
- ------------------------
+ ----------------------------
 "
 }
 
@@ -688,37 +688,25 @@ Print_WARP_WireGuard_Status() {
     Check_WireGuard_Status
     Check_WARP_WireGuard_Status
     echo -e "
- ------------------------
+ ----------------------------
  WireGuard\t: ${WireGuard_Status_en}
  IPv4 Network\t: ${WARP_IPv4_Status_en}
  IPv6 Network\t: ${WARP_IPv6_Status_en}
- ------------------------
+ ----------------------------
 "
 }
 
 Print_ALL_Status() {
     Check_ALL_Status
     echo -e "
- ------------------------
+ ----------------------------
  WARP Client\t: ${WARP_Client_Status_en}
  SOCKS5 Status\t: ${WARP_Proxy_Status_en}
- ------------------------
+ ----------------------------
  WireGuard\t: ${WireGuard_Status_en}
  IPv4 Network\t: ${WARP_IPv4_Status_en}
  IPv6 Network\t: ${WARP_IPv6_Status_en}
- ------------------------
-"
-}
-
-Print_ALL_Status_menu() {
-    echo -e " -----------------------
- WARP 客户端\t: ${WARP_Client_Status_zh}
- SOCKS5 状态\t: ${WARP_Proxy_Status_zh}
- -----------------------
- WireGuard 状态\t: ${WireGuard_Status_zh}
- IPv4 网络状态\t: ${WARP_IPv4_Status_zh}
- IPv6 网络状态\t: ${WARP_IPv6_Status_zh}
- -----------------------
+ ----------------------------
 "
 }
 
@@ -986,6 +974,15 @@ Start_Menu() {
     echo -e "
 ${FontColor_LightYellow}Cloudflare WARP 一键配置脚本${FontColor_Suffix} ${FontColor_Red}[${shVersion}]${FontColor_Suffix} by ${FontColor_LightPurple}P3TERX.COM${FontColor_Suffix}
 
+ -------------------------
+ WARP 客户端状态 : ${WARP_Client_Status_zh}
+ SOCKS5 代理状态 : ${WARP_Proxy_Status_zh}
+ -------------------------
+ WireGuard 状态 : ${WireGuard_Status_zh}
+ IPv4 网络状态  : ${WARP_IPv4_Status_zh}
+ IPv6 网络状态  : ${WARP_IPv6_Status_zh}
+ -------------------------
+
  ${FontColor_Green}1.${FontColor_Suffix} 自动配置 WARP 官方客户端 SOCKS5 代理
  ${FontColor_Green}2.${FontColor_Suffix} 自动配置 WARP WireGuard IPv4 网络
  ${FontColor_Green}3.${FontColor_Suffix} 自动配置 WARP WireGuard IPv6 网络
@@ -993,7 +990,6 @@ ${FontColor_LightYellow}Cloudflare WARP 一键配置脚本${FontColor_Suffix} ${
  ${FontColor_Green}5.${FontColor_Suffix} 手动选择 WARP WireGuard 双栈配置方案
  ${FontColor_Green}6.${FontColor_Suffix} 其它选项
 "
-    Print_ALL_Status_menu
     unset MenuNumber
     read -p "请输入选项: " MenuNumber
     echo
