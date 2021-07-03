@@ -3,7 +3,7 @@
 # https://github.com/P3TERX/warp.sh
 # Description: Cloudflare WARP configuration script
 # System Required: Debian, Ubuntu, CentOS
-# Version: beta6
+# Version: beta7
 #
 # MIT License
 #
@@ -28,7 +28,7 @@
 # SOFTWARE.
 #
 
-shVersion='beta6'
+shVersion='beta7'
 FontColor_Red="\033[31m"
 FontColor_Green="\033[32m"
 FontColor_LightYellow="\033[1;33m"
@@ -376,7 +376,16 @@ Restart_WireGuard() {
     echo -e "${MSG_info} Done."
 }
 
+Enable_IPv6_Support() {
+    if [[ $(sysctl -a | grep 'disable_ipv6.*=.*1') || $(cat /etc/sysctl.{conf,d/*} | grep 'disable_ipv6.*=.*1') ]]; then
+        sed -i '/disable_ipv6/d' /etc/sysctl.{conf,d/*}
+        echo 'net.ipv6.conf.all.disable_ipv6 = 0' >/etc/sysctl.d/ipv6.conf
+        sysctl -w net.ipv6.conf.all.disable_ipv6=0
+    fi
+}
+
 Enable_WireGuard() {
+    Enable_IPv6_Support
     Check_WireGuard
     if [[ ${WireGuard_SelfStart} = enabled ]]; then
         Restart_WireGuard
