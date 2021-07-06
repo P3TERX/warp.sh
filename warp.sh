@@ -3,7 +3,7 @@
 # https://github.com/P3TERX/warp.sh
 # Description: Cloudflare WARP configuration script
 # System Required: Debian, Ubuntu, CentOS
-# Version: beta8
+# Version: beta9
 #
 # MIT License
 #
@@ -28,7 +28,7 @@
 # SOFTWARE.
 #
 
-shVersion='beta8'
+shVersion='beta9'
 FontColor_Red="\033[31m"
 FontColor_Green="\033[32m"
 FontColor_LightYellow="\033[1;33m"
@@ -266,10 +266,15 @@ Install_WireGuardTools_Debian() {
     DebianVer=$(lsb_release -sr | cut -d. -f1)
     case ${DebianVer} in
     10)
-        [[ -z $(grep -r "$(lsb_release -sc)-backports" /etc/apt/) ]] && echo "deb http://deb.debian.org/debian $(lsb_release -sc)-backports main" | tee /etc/apt/sources.list.d/backports.list
+        if [[ -z $(grep "^deb.*buster-backports.*main" /etc/apt/sources.list{,.d/*}) ]]; then
+            echo "deb http://deb.debian.org/debian buster-backports main" | tee /etc/apt/sources.list.d/backports.list
+        fi
         ;;
     9)
-        [[ -z $(grep -r "unstable" /etc/apt/) ]] && echo "deb http://deb.debian.org/debian/ unstable main" | tee /etc/apt/sources.list.d/unstable.list && echo -e "Package: *\nPin: release a=unstable\nPin-Priority: 150\n" | tee /etc/apt/preferences.d/limit-unstable
+        if [[ -z $(grep "^deb.*unstable.*main" /etc/apt/sources.list{,.d/*}) ]]; then
+            echo "deb http://deb.debian.org/debian/ unstable main" | tee /etc/apt/sources.list.d/unstable.list
+            echo -e "Package: *\nPin: release a=unstable\nPin-Priority: 150\n" | tee /etc/apt/preferences.d/limit-unstable
+        fi
         ;;
     *)
         if [[ ${DebianVer} -lt 9 ]]; then
