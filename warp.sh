@@ -266,11 +266,10 @@ Install_WireGuardTools_Debian() {
     DebianVer=$(lsb_release -sr | cut -d. -f1)
     case ${DebianVer} in
     10)
-        echo "deb http://deb.debian.org/debian $(lsb_release -sc)-backports main" | tee /etc/apt/sources.list.d/backports.list
+        [[ -z $(grep -r "$(lsb_release -sc)-backports" /etc/apt/) ]] && echo "deb http://deb.debian.org/debian $(lsb_release -sc)-backports main" | tee /etc/apt/sources.list.d/backports.list
         ;;
     9)
-        echo "deb http://deb.debian.org/debian/ unstable main" | tee /etc/apt/sources.list.d/unstable.list
-        echo -e "Package: *\nPin: release a=unstable\nPin-Priority: 150\n" | tee /etc/apt/preferences.d/limit-unstable
+        [[ -z $(grep -r "unstable" /etc/apt/) ]] && echo "deb http://deb.debian.org/debian/ unstable main" | tee /etc/apt/sources.list.d/unstable.list && echo -e "Package: *\nPin: release a=unstable\nPin-Priority: 150\n" | tee /etc/apt/preferences.d/limit-unstable
         ;;
     *)
         if [[ ${DebianVer} -lt 9 ]]; then
