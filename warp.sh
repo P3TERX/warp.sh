@@ -3,7 +3,7 @@
 # https://github.com/P3TERX/warp.sh
 # Description: Cloudflare WARP configuration script
 # System Required: Debian, Ubuntu, CentOS
-# Version: beta9
+# Version: beta10
 #
 # MIT License
 #
@@ -28,7 +28,7 @@
 # SOFTWARE.
 #
 
-shVersion='beta9'
+shVersion='beta10'
 FontColor_Red="\033[31m"
 FontColor_Green="\033[32m"
 FontColor_LightYellow="\033[1;33m"
@@ -459,13 +459,17 @@ Check_Network_Status() {
 }
 
 Check_IPv4_addr() {
-    Interface=$(ip -4 r | awk '/^def/{print $5}')
-    IPv4_addr=$(ip -4 -o addr show dev ${Interface} | awk '{print $4}' | cut -d'/' -f1 | head -1)
+    IPv4_addr=$(
+        ip route get ${TestIPv4_1} 2>/dev/null | grep -oP 'src \K\S+' ||
+            ip route get ${TestIPv4_2} 2>/dev/null | grep -oP 'src \K\S+'
+    )
 }
 
 Check_IPv6_addr() {
-    Interface=$(ip -6 r | awk '/^def/{print $5}')
-    IPv6_addr=$(ip -6 -o addr show dev ${Interface} | awk '{print $4}' | cut -d'/' -f1 | head -1)
+    IPv6_addr=$(
+        ip route get ${TestIPv6_1} 2>/dev/null | grep -oP 'src \K\S+' ||
+            ip route get ${TestIPv6_2} 2>/dev/null | grep -oP 'src \K\S+'
+    )
 }
 
 Get_IP_addr() {
@@ -473,12 +477,20 @@ Get_IP_addr() {
     if [[ ${IPv4Status} = on ]]; then
         echo -e "${MSG_info} Checking IPv4 Address..."
         Check_IPv4_addr
-        echo -e "${MSG_info} IPv4 Address: ${FontColor_LightPurple}${IPv4_addr}${FontColor_Suffix}"
+        if [[ ${IPv4_addr} ]]; then
+            echo -e "${MSG_info} IPv4 Address: ${FontColor_LightPurple}${IPv4_addr}${FontColor_Suffix}"
+        else
+            echo -e "${MSG_warn} IPv4 Address not obtained."
+        fi
     fi
     if [[ ${IPv6Status} = on ]]; then
         echo -e "${MSG_info} Checking IPv6 Address..."
         Check_IPv6_addr
-        echo -e "${MSG_info} IPv6 Address: ${FontColor_LightPurple}${IPv6_addr}${FontColor_Suffix}"
+        if [[ ${IPv6_addr} ]]; then
+            echo -e "${MSG_info} IPv6 Address: ${FontColor_LightPurple}${IPv6_addr}${FontColor_Suffix}"
+        else
+            echo -e "${MSG_warn} IPv6 Address not obtained."
+        fi
     fi
 }
 
