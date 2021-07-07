@@ -3,7 +3,7 @@
 # https://github.com/P3TERX/warp.sh
 # Description: Cloudflare WARP configuration script
 # System Required: Debian, Ubuntu, CentOS
-# Version: beta10
+# Version: beta11
 #
 # MIT License
 #
@@ -28,7 +28,7 @@
 # SOFTWARE.
 #
 
-shVersion='beta10'
+shVersion='beta11'
 FontColor_Red="\033[31m"
 FontColor_Green="\033[32m"
 FontColor_LightYellow="\033[1;33m"
@@ -364,7 +364,14 @@ Start_WireGuard() {
     else
         systemctl enable wg-quick@wgcf --now
     fi
-    echo -e "${MSG_info} Done."
+    Check_WireGuard
+    if [[ ${WireGuard_Status} = active ]]; then
+        echo -e "${MSG_info} WireGuard is running."
+    else
+        echo -e "${MSG_error} WireGuard failure to run!"
+        journalctl -u wg-quick@wgcf --no-pager
+        exit 1
+    fi
 }
 
 Restart_WireGuard() {
@@ -377,7 +384,14 @@ Restart_WireGuard() {
     else
         systemctl restart wg-quick@wgcf
     fi
-    echo -e "${MSG_info} Done."
+    Check_WireGuard
+    if [[ ${WireGuard_Status} = active ]]; then
+        echo -e "${MSG_info} WireGuard has been restarted."
+    else
+        echo -e "${MSG_error} WireGuard failure to run!"
+        journalctl -u wg-quick@wgcf --no-pager
+        exit 1
+    fi
 }
 
 Enable_IPv6_Support() {
@@ -396,40 +410,51 @@ Enable_WireGuard() {
     else
         Start_WireGuard
     fi
-    Check_WireGuard
-    if [[ ${WireGuard_Status} = active ]]; then
-        echo -e "${MSG_info} WireGuard is running!"
-    else
-        echo -e "${MSG_error} WireGuard failure to run!"
-        journalctl -u wg-quick@wgcf --no-pager
-        exit 1
-    fi
 }
 
 Stop_WireGuard() {
     Check_WARP_Client
-    echo -e "${MSG_info} Stoping WireGuard..."
-    if [[ ${WARP_Client_Status} = active ]]; then
-        systemctl stop warp-svc
-        systemctl stop wg-quick@wgcf
-        systemctl start warp-svc
+    if [[ ${WireGuard_Status} = active ]]; then
+        echo -e "${MSG_info} Stoping WireGuard..."
+        if [[ ${WARP_Client_Status} = active ]]; then
+            systemctl stop warp-svc
+            systemctl stop wg-quick@wgcf
+            systemctl start warp-svc
+        else
+            systemctl stop wg-quick@wgcf
+        fi
+        Check_WireGuard
+        if [[ ${WireGuard_Status} != active ]]; then
+            echo -e "${MSG_info} WireGuard has been stopped."
+        else
+            echo -e "${MSG_error} WireGuard stop failure!"
+        fi
     else
-        systemctl stop wg-quick@wgcf
+        echo -e "${MSG_info} WireGuard is stopped."
     fi
-    echo -e "${MSG_info} Done."
 }
 
 Disable_WireGuard() {
     Check_WARP_Client
-    echo -e "${MSG_info} Disabling WireGuard..."
-    if [[ ${WARP_Client_Status} = active ]]; then
-        systemctl stop warp-svc
-        systemctl disable wg-quick@wgcf --now
-        systemctl start warp-svc
+    Check_WireGuard
+    if [[ ${WireGuard_SelfStart} = enabled || ${WireGuard_Status} = active ]]; then
+        echo -e "${MSG_info} Disabling WireGuard..."
+        if [[ ${WARP_Client_Status} = active ]]; then
+            systemctl stop warp-svc
+            systemctl disable wg-quick@wgcf --now
+            systemctl start warp-svc
+        else
+            systemctl disable wg-quick@wgcf --now
+        fi
+        Check_WireGuard
+        if [[ ${WireGuard_SelfStart} != enabled && ${WireGuard_Status} != active ]]; then
+            echo -e "${MSG_info} Wireguard has been disabled."
+        else
+            echo -e "${MSG_error} WireGuard disable failure!"
+        fi
     else
-        systemctl disable wg-quick@wgcf --now
+        echo -e "${MSG_info} WireGuard is disabled."
     fi
-    echo -e "${MSG_info} Done."
 }
 
 Print_WireGuard_Log() {
