@@ -3,7 +3,7 @@
 # https://github.com/P3TERX/warp.sh
 # Description: Cloudflare WARP configuration script
 # System Required: Debian, Ubuntu, CentOS
-# Version: beta12
+# Version: beta13
 #
 # MIT License
 #
@@ -28,7 +28,7 @@
 # SOFTWARE.
 #
 
-shVersion='beta12'
+shVersion='beta13'
 FontColor_Red="\033[31m"
 FontColor_Green="\033[32m"
 FontColor_LightYellow="\033[1;33m"
@@ -644,12 +644,12 @@ Check_WARP_Proxy_Status() {
     fi
     case ${WARP_Proxy_Status} in
     on)
-        WARP_Proxy_Status_en="${FontColor_Green}On${FontColor_Suffix}"
-        WARP_Proxy_Status_zh="${FontColor_Green}已开启${FontColor_Suffix}"
+        WARP_Proxy_Status_en="${FontColor_Green}${WARP_Proxy_Port}${FontColor_Suffix}"
+        WARP_Proxy_Status_zh="${WARP_Proxy_Status_en}"
         ;;
     plus)
-        WARP_Proxy_Status_en="${FontColor_Green}On(WARP+)${FontColor_Suffix}"
-        WARP_Proxy_Status_zh="${FontColor_Green}已开启(WARP+)${FontColor_Suffix}"
+        WARP_Proxy_Status_en="${FontColor_Green}${WARP_Proxy_Port}(WARP+)${FontColor_Suffix}"
+        WARP_Proxy_Status_zh="${WARP_Proxy_Status_en}"
         ;;
     *)
         WARP_Proxy_Status_en="${FontColor_Red}Off${FontColor_Suffix}"
@@ -743,17 +743,20 @@ Check_ALL_Status() {
 }
 
 Print_WARP_Client_Status() {
+    echo -e "${MSG_info} Status check in progress..."
     Check_WARP_Client_Status
     Check_WARP_Proxy_Status
     echo -e "
  ----------------------------
  WARP Client\t: ${WARP_Client_Status_en}
- SOCKS5 Status\t: ${WARP_Proxy_Status_en}
+ SOCKS5 Port\t: ${WARP_Proxy_Status_en}
  ----------------------------
 "
+    echo -e "${MSG_info} Done."
 }
 
 Print_WARP_WireGuard_Status() {
+    echo -e "${MSG_info} Status check in progress..."
     Check_WireGuard_Status
     Check_WARP_WireGuard_Status
     echo -e "
@@ -763,14 +766,16 @@ Print_WARP_WireGuard_Status() {
  IPv6 Network\t: ${WARP_IPv6_Status_en}
  ----------------------------
 "
+    echo -e "${MSG_info} Done."
 }
 
 Print_ALL_Status() {
+    echo -e "${MSG_info} Status check in progress..."
     Check_ALL_Status
     echo -e "
  ----------------------------
  WARP Client\t: ${WARP_Client_Status_en}
- SOCKS5 Status\t: ${WARP_Proxy_Status_en}
+ SOCKS5 Port\t: ${WARP_Proxy_Status_en}
  ----------------------------
  WireGuard\t: ${WireGuard_Status_en}
  IPv4 Network\t: ${WARP_IPv4_Status_en}
@@ -1045,7 +1050,7 @@ ${FontColor_LightYellow}Cloudflare WARP 一键配置脚本${FontColor_Suffix} ${
 
  -------------------------
  WARP 客户端状态 : ${WARP_Client_Status_zh}
- SOCKS5 代理状态 : ${WARP_Proxy_Status_zh}
+ SOCKS5 代理端口 : ${WARP_Proxy_Status_zh}
  -------------------------
  WireGuard 状态 : ${WireGuard_Status_zh}
  IPv4 网络状态  : ${WARP_IPv4_Status_zh}
