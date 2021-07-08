@@ -3,7 +3,7 @@
 # https://github.com/P3TERX/warp.sh
 # Description: Cloudflare WARP configuration script
 # System Required: Debian, Ubuntu, CentOS
-# Version: beta11
+# Version: beta12
 #
 # MIT License
 #
@@ -28,7 +28,7 @@
 # SOFTWARE.
 #
 
-shVersion='beta11'
+shVersion='beta12'
 FontColor_Red="\033[31m"
 FontColor_Green="\033[32m"
 FontColor_LightYellow="\033[1;33m"
@@ -70,6 +70,7 @@ TestIPv4_1='8.8.8.8'
 TestIPv4_2='9.9.9.9'
 TestIPv6_1='2001:4860:4860::8888'
 TestIPv6_2='2620:fe::fe'
+CF_Trace_URL='https://www.cloudflare.com/cdn-cgi/trace'
 
 Install_Requirements_Debian() {
     if [[ ! $(command -v lsb_release) ]]; then
@@ -462,7 +463,7 @@ Print_WireGuard_Log() {
 }
 
 Check_Network_Status_IPv4() {
-    if ping -c1 ${TestIPv4_1} >/dev/null 2>&1 || ping -c1 ${TestIPv4_2} >/dev/null 2>&1; then
+    if ping -c1 -W1 ${TestIPv4_1} >/dev/null 2>&1 || ping -c1 -W1 ${TestIPv4_2} >/dev/null 2>&1; then
         IPv4Status='on'
     else
         IPv4Status='off'
@@ -470,7 +471,7 @@ Check_Network_Status_IPv4() {
 }
 
 Check_Network_Status_IPv6() {
-    if ping6 -c1 ${TestIPv6_1} >/dev/null 2>&1 || ping6 -c1 ${TestIPv6_2} >/dev/null 2>&1; then
+    if ping6 -c1 -W1 ${TestIPv6_1} >/dev/null 2>&1 || ping6 -c1 -W1 ${TestIPv6_2} >/dev/null 2>&1; then
         IPv6Status='on'
     else
         IPv6Status='off'
@@ -634,8 +635,13 @@ Check_WARP_Client_Status() {
 }
 
 Check_WARP_Proxy_Status() {
-    Get_WARP_Proxy_Port
-    WARP_Proxy_Status=$(curl -sx "socks5h://127.0.0.1:${WARP_Proxy_Port}" https://www.cloudflare.com/cdn-cgi/trace | grep warp | cut -d= -f2)
+    Check_WARP_Client
+    if [[ ${WARP_Client_Status} = active ]]; then
+        Get_WARP_Proxy_Port
+        WARP_Proxy_Status=$(curl -sx "socks5h://127.0.0.1:${WARP_Proxy_Port}" ${CF_Trace_URL} --connect-timeout 2 | grep warp | cut -d= -f2)
+    else
+        unset WARP_Proxy_Status
+    fi
     case ${WARP_Proxy_Status} in
     on)
         WARP_Proxy_Status_en="${FontColor_Green}On${FontColor_Suffix}"
@@ -667,7 +673,12 @@ Check_WireGuard_Status() {
 }
 
 Check_WARP_WireGuard_Status() {
-    WARP_IPv4_Status=$(curl -s4 https://www.cloudflare.com/cdn-cgi/trace | grep warp | cut -d= -f2)
+    Check_Network_Status_IPv4
+    if [[ ${IPv4Status} = on ]]; then
+        WARP_IPv4_Status=$(curl -s4 ${CF_Trace_URL} --connect-timeout 2 | grep warp | cut -d= -f2)
+    else
+        unset WARP_IPv4_Status
+    fi
     case ${WARP_IPv4_Status} in
     on)
         WARP_IPv4_Status_en="${FontColor_Green}WARP${FontColor_Suffix}"
@@ -682,11 +693,22 @@ Check_WARP_WireGuard_Status() {
         WARP_IPv4_Status_zh="正常"
         ;;
     *)
-        WARP_IPv4_Status_en="${FontColor_Red}Unconnected${FontColor_Suffix}"
-        WARP_IPv4_Status_zh="${FontColor_Red}未连接${FontColor_Suffix}"
+        Check_Network_Status_IPv4
+        if [[ ${IPv4Status} = on ]]; then
+            WARP_IPv4_Status_en="Normal"
+            WARP_IPv4_Status_zh="正常"
+        else
+            WARP_IPv4_Status_en="${FontColor_Red}Unconnected${FontColor_Suffix}"
+            WARP_IPv4_Status_zh="${FontColor_Red}未连接${FontColor_Suffix}"
+        fi
         ;;
     esac
-    WARP_IPv6_Status=$(curl -s6 https://www.cloudflare.com/cdn-cgi/trace | grep warp | cut -d= -f2)
+    Check_Network_Status_IPv6
+    if [[ ${IPv6Status} = on ]]; then
+        WARP_IPv6_Status=$(curl -s6 ${CF_Trace_URL} --connect-timeout 2 | grep warp | cut -d= -f2)
+    else
+        unset WARP_IPv6_Status
+    fi
     case ${WARP_IPv6_Status} in
     on)
         WARP_IPv6_Status_en="${FontColor_Green}WARP${FontColor_Suffix}"
@@ -701,8 +723,14 @@ Check_WARP_WireGuard_Status() {
         WARP_IPv6_Status_zh="正常"
         ;;
     *)
-        WARP_IPv6_Status_en="${FontColor_Red}Unconnected${FontColor_Suffix}"
-        WARP_IPv6_Status_zh="${FontColor_Red}未连接${FontColor_Suffix}"
+        Check_Network_Status_IPv6
+        if [[ ${IPv6Status} = on ]]; then
+            WARP_IPv6_Status_en="Normal"
+            WARP_IPv6_Status_zh="正常"
+        else
+            WARP_IPv6_Status_en="${FontColor_Red}Unconnected${FontColor_Suffix}"
+            WARP_IPv6_Status_zh="${FontColor_Red}未连接${FontColor_Suffix}"
+        fi
         ;;
     esac
 }
