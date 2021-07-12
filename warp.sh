@@ -3,7 +3,7 @@
 # https://github.com/P3TERX/warp.sh
 # Description: Cloudflare WARP configuration script
 # System Required: Debian, Ubuntu, CentOS
-# Version: beta13
+# Version: beta14
 #
 # MIT License
 #
@@ -28,28 +28,51 @@
 # SOFTWARE.
 #
 
-shVersion='beta13'
+shVersion='beta14'
+
 FontColor_Red="\033[31m"
+FontColor_Red_Bold="\033[1;31m"
 FontColor_Green="\033[32m"
-FontColor_LightYellow="\033[1;33m"
-FontColor_LightPurple="\033[1;35m"
+FontColor_Green_Bold="\033[1;32m"
+FontColor_Yellow="\033[33m"
+FontColor_Yellow_Bold="\033[1;33m"
+FontColor_Purple="\033[35m"
+FontColor_Purple_Bold="\033[1;35m"
 FontColor_Suffix="\033[0m"
-MSG_info="[${FontColor_Green}INFO${FontColor_Suffix}]"
-MSG_error="[${FontColor_Red}ERROR${FontColor_Suffix}]"
-MSG_warn="[${FontColor_LightYellow}WARN${FontColor_Suffix}]"
+
+log() {
+    local LEVEL="$1"
+    local MSG="$2"
+    case "${LEVEL}" in
+    INFO)
+        local LEVEL="[${FontColor_Green}${LEVEL}${FontColor_Suffix}]"
+        local MSG="${LEVEL} ${MSG}"
+        ;;
+    WARN)
+        local LEVEL="[${FontColor_Yellow}${LEVEL}${FontColor_Suffix}]"
+        local MSG="${LEVEL} ${MSG}"
+        ;;
+    ERROR)
+        local LEVEL="[${FontColor_Red}${LEVEL}${FontColor_Suffix}]"
+        local MSG="${LEVEL} ${MSG}"
+        ;;
+    *) ;;
+    esac
+    echo -e "${MSG}"
+}
 
 if [[ $(uname -s) != Linux ]]; then
-    echo -e "${MSG_error} This operating system is not supported."
+    log ERROR "This operating system is not supported."
     exit 1
 fi
 
 if [[ $(id -u) != 0 ]]; then
-    echo -e "${MSG_error} This script must be run as root."
+    log ERROR "This script must be run as root."
     exit 1
 fi
 
 if [[ -z $(command -v curl) ]]; then
-    echo -e "${MSG_error} cURL is not installed."
+    log ERROR "cURL is not installed."
     exit 1
 fi
 
@@ -110,7 +133,7 @@ Instal_WARP_Client_CentOS() {
     if [[ $? = 0 ]]; then
         yum install cloudflare-warp -y
     else
-        echo -e "${MSG_error} This operating system is not supported."
+        log ERROR "This operating system is not supported."
         exit 1
     fi
 }
@@ -121,7 +144,7 @@ Check_WARP_Client() {
 }
 
 Instal_WARP_Client() {
-    echo -e "${MSG_info} Installing Cloudflare WARP Client..."
+    log INFO "Installing Cloudflare WARP Client..."
     case ${OS_ID} in
     *debian*)
         Instal_WARP_Client_Debian
@@ -133,22 +156,22 @@ Instal_WARP_Client() {
         Instal_WARP_Client_CentOS
         ;;
     *)
-        echo -e "${MSG_error} This operating system is not supported."
+        log ERROR "This operating system is not supported."
         exit 1
         ;;
     esac
     Check_WARP_Client
     if [[ ${WARP_Client_Status} = active ]]; then
-        echo -e "${MSG_info} Cloudflare WARP Client installed successfully!"
+        log INFO "Cloudflare WARP Client installed successfully!"
     else
-        echo -e "${MSG_error} warp-svc failure to run!"
+        log ERROR "warp-svc failure to run!"
         journalctl -u warp-svc --no-pager
         exit 1
     fi
 }
 
 Uninstall_WARP_Client() {
-    echo -e "${MSG_info} Uninstalling Cloudflare WARP Client..."
+    log INFO "Uninstalling Cloudflare WARP Client..."
     case ${OS_ID} in
     *debian* | *ubuntu*)
         apt purge cloudflare-warp -y
@@ -157,7 +180,7 @@ Uninstall_WARP_Client() {
         yum remove cloudflare-warp -y
         ;;
     *)
-        echo -e "${MSG_error} This operating system is not supported."
+        log ERROR "This operating system is not supported."
         exit 1
         ;;
     esac
@@ -170,27 +193,27 @@ Init_WARP_Client() {
     fi
     yes | warp-cli
     if [[ $(warp-cli account) = MissingRegistration ]]; then
-        echo -e "${MSG_info} Cloudflare WARP Account Registration in progress..."
+        log INFO "Cloudflare WARP Account Registration in progress..."
         warp-cli register
     fi
 }
 
 Connect_WARP() {
-    echo -e "${MSG_info} Connecting to WARP..."
+    log INFO "Connecting to WARP..."
     warp-cli connect
-    echo -e "${MSG_info} Enable WARP Always-On..."
+    log INFO "Enable WARP Always-On..."
     warp-cli enable-always-on
 }
 
 Disconnect_WARP() {
-    echo -e "${MSG_info} Disable WARP Always-On..."
+    log INFO "Disable WARP Always-On..."
     warp-cli disable-always-on
-    echo -e "${MSG_info} Disconnect from WARP..."
+    log INFO "Disconnect from WARP..."
     warp-cli disconnect
 }
 
 Set_WARP_Mode_Proxy() {
-    echo -e "${MSG_info} Setting up WARP Proxy Mode..."
+    log INFO "Setting up WARP Proxy Mode..."
     warp-cli set-mode proxy
 }
 
@@ -221,7 +244,7 @@ Uninstall_wgcf() {
 Register_WARP_Account() {
     while [[ ! -f wgcf-account.toml ]]; do
         Install_wgcf
-        echo -e "${MSG_info} Cloudflare WARP Account registration in progress..."
+        log INFO "Cloudflare WARP Account registration in progress..."
         yes | wgcf register
         sleep 5
     done
@@ -230,7 +253,7 @@ Register_WARP_Account() {
 Generate_WGCF_Profile() {
     while [[ ! -f ${WGCF_Profile} ]]; do
         Register_WARP_Account
-        echo -e "${MSG_info} WARP WireGuard profile (wgcf-profile.conf) generation in progress..."
+        log INFO "WARP WireGuard profile (wgcf-profile.conf) generation in progress..."
         wgcf generate
     done
 }
@@ -279,7 +302,7 @@ Install_WireGuardTools_Debian() {
         ;;
     *)
         if [[ ${DebianVer} -lt 9 ]]; then
-            echo -e "${MSG_error} This operating system is not supported."
+            log ERROR "This operating system is not supported."
             exit 1
         fi
         ;;
@@ -310,7 +333,7 @@ Install_WireGuardTools_Arch() {
 }
 
 Install_WireGuardTools() {
-    echo -e "${MSG_info} Installing wireguard-tools..."
+    log INFO "Installing wireguard-tools..."
     case ${OS_ID} in
     *debian*)
         Install_WireGuardTools_Debian
@@ -328,7 +351,7 @@ Install_WireGuardTools() {
         Install_WireGuardTools_Arch
         ;;
     *)
-        echo -e "${MSG_error} This operating system is not supported."
+        log ERROR "This operating system is not supported."
         exit 1
         ;;
     esac
@@ -357,7 +380,7 @@ Install_WireGuard() {
 
 Start_WireGuard() {
     Check_WARP_Client
-    echo -e "${MSG_info} Starting WireGuard..."
+    log INFO "Starting WireGuard..."
     if [[ ${WARP_Client_Status} = active ]]; then
         systemctl stop warp-svc
         systemctl enable wg-quick@wgcf --now
@@ -367,9 +390,9 @@ Start_WireGuard() {
     fi
     Check_WireGuard
     if [[ ${WireGuard_Status} = active ]]; then
-        echo -e "${MSG_info} WireGuard is running."
+        log INFO "WireGuard is running."
     else
-        echo -e "${MSG_error} WireGuard failure to run!"
+        log ERROR "WireGuard failure to run!"
         journalctl -u wg-quick@wgcf --no-pager
         exit 1
     fi
@@ -377,7 +400,7 @@ Start_WireGuard() {
 
 Restart_WireGuard() {
     Check_WARP_Client
-    echo -e "${MSG_info} Restarting WireGuard..."
+    log INFO "Restarting WireGuard..."
     if [[ ${WARP_Client_Status} = active ]]; then
         systemctl stop warp-svc
         systemctl restart wg-quick@wgcf
@@ -387,9 +410,9 @@ Restart_WireGuard() {
     fi
     Check_WireGuard
     if [[ ${WireGuard_Status} = active ]]; then
-        echo -e "${MSG_info} WireGuard has been restarted."
+        log INFO "WireGuard has been restarted."
     else
-        echo -e "${MSG_error} WireGuard failure to run!"
+        log ERROR "WireGuard failure to run!"
         journalctl -u wg-quick@wgcf --no-pager
         exit 1
     fi
@@ -416,7 +439,7 @@ Enable_WireGuard() {
 Stop_WireGuard() {
     Check_WARP_Client
     if [[ ${WireGuard_Status} = active ]]; then
-        echo -e "${MSG_info} Stoping WireGuard..."
+        log INFO "Stoping WireGuard..."
         if [[ ${WARP_Client_Status} = active ]]; then
             systemctl stop warp-svc
             systemctl stop wg-quick@wgcf
@@ -426,12 +449,12 @@ Stop_WireGuard() {
         fi
         Check_WireGuard
         if [[ ${WireGuard_Status} != active ]]; then
-            echo -e "${MSG_info} WireGuard has been stopped."
+            log INFO "WireGuard has been stopped."
         else
-            echo -e "${MSG_error} WireGuard stop failure!"
+            log ERROR "WireGuard stop failure!"
         fi
     else
-        echo -e "${MSG_info} WireGuard is stopped."
+        log INFO "WireGuard is stopped."
     fi
 }
 
@@ -439,7 +462,7 @@ Disable_WireGuard() {
     Check_WARP_Client
     Check_WireGuard
     if [[ ${WireGuard_SelfStart} = enabled || ${WireGuard_Status} = active ]]; then
-        echo -e "${MSG_info} Disabling WireGuard..."
+        log INFO "Disabling WireGuard..."
         if [[ ${WARP_Client_Status} = active ]]; then
             systemctl stop warp-svc
             systemctl disable wg-quick@wgcf --now
@@ -449,12 +472,12 @@ Disable_WireGuard() {
         fi
         Check_WireGuard
         if [[ ${WireGuard_SelfStart} != enabled && ${WireGuard_Status} != active ]]; then
-            echo -e "${MSG_info} Wireguard has been disabled."
+            log INFO "Wireguard has been disabled."
         else
-            echo -e "${MSG_error} WireGuard disable failure!"
+            log ERROR "WireGuard disable failure!"
         fi
     else
-        echo -e "${MSG_info} WireGuard is disabled."
+        log INFO "WireGuard is disabled."
     fi
 }
 
@@ -501,33 +524,33 @@ Check_IPv6_addr() {
 Get_IP_addr() {
     Check_Network_Status
     if [[ ${IPv4Status} = on ]]; then
-        echo -e "${MSG_info} Checking IPv4 Address..."
+        log INFO "Checking IPv4 Address..."
         Check_IPv4_addr
         if [[ ${IPv4_addr} ]]; then
-            echo -e "${MSG_info} IPv4 Address: ${FontColor_LightPurple}${IPv4_addr}${FontColor_Suffix}"
+            log INFO "IPv4 Address: ${FontColor_Purple}${IPv4_addr}${FontColor_Suffix}"
         else
-            echo -e "${MSG_warn} IPv4 Address not obtained."
+            log WARN "IPv4 Address not obtained."
         fi
     fi
     if [[ ${IPv6Status} = on ]]; then
-        echo -e "${MSG_info} Checking IPv6 Address..."
+        log INFO "Checking IPv6 Address..."
         Check_IPv6_addr
         if [[ ${IPv6_addr} ]]; then
-            echo -e "${MSG_info} IPv6 Address: ${FontColor_LightPurple}${IPv6_addr}${FontColor_Suffix}"
+            log INFO "IPv6 Address: ${FontColor_Purple}${IPv6_addr}${FontColor_Suffix}"
         else
-            echo -e "${MSG_warn} IPv6 Address not obtained."
+            log WARN "IPv6 Address not obtained."
         fi
     fi
 }
 
 Get_IPv4_addr() {
-    echo -e "${MSG_info} 正在检测 IPv4 地址..."
+    log INFO "正在检测 IPv4 地址..."
     Check_IPv4_addr
     if [[ -z ${IPv4_addr} ]]; then
-        echo -e "${MSG_error} IPv4 地址自动检测失败！"
+        log ERROR "IPv4 地址自动检测失败！"
         Input_IPv4_addr
     else
-        echo -e "${MSG_info} 检测到 IPv4 地址：${FontColor_LightPurple}${IPv4_addr}${FontColor_Suffix}"
+        log INFO "检测到 IPv4 地址：${FontColor_Purple}${IPv4_addr}${FontColor_Suffix}"
         unset answer_YN
         read -p "是否需要修改？[y/N] " answer_YN
         case ${answer_YN:-n} in
@@ -538,7 +561,7 @@ Get_IPv4_addr() {
             echo
             ;;
         *)
-            echo -e "${MSG_error} 无效输入！"
+            log ERROR "无效输入！"
             Get_IPv4_addr
             ;;
         esac
@@ -546,13 +569,13 @@ Get_IPv4_addr() {
 }
 
 Get_IPv6_addr() {
-    echo -e "${MSG_info} 正在检测 IPv6 地址..."
+    log INFO "正在检测 IPv6 地址..."
     Check_IPv6_addr
     if [[ -z ${IPv6_addr} ]]; then
-        echo -e "${MSG_error} IPv6 地址自动检测失败！"
+        log ERROR "IPv6 地址自动检测失败！"
         Input_IPv6_addr
     else
-        echo -e "${MSG_info} 检测到 IPv6 地址：${FontColor_LightPurple}${IPv6_addr}${FontColor_Suffix}"
+        log INFO "检测到 IPv6 地址：${FontColor_Purple}${IPv6_addr}${FontColor_Suffix}"
         unset answer_YN
         read -p "是否需要修改？[y/N] " answer_YN
         case ${answer_YN:-n} in
@@ -563,7 +586,7 @@ Get_IPv6_addr() {
             echo
             ;;
         *)
-            echo -e "${MSG_error} 无效输入！"
+            log ERROR "无效输入！"
             Get_IPv6_addr
             ;;
         esac
@@ -573,7 +596,7 @@ Get_IPv6_addr() {
 Input_IPv4_addr() {
     read -p "请输入 IPv4 地址：" IPv4_addr
     if [[ -z ${IPv4_addr} ]]; then
-        echo -e "${MSG_error} 无效输入！"
+        log ERROR "无效输入！"
         Get_IPv4_addr
     fi
 }
@@ -581,13 +604,13 @@ Input_IPv4_addr() {
 Input_IPv6_addr() {
     read -p "请输入 IPv6 地址：" IPv6_addr
     if [[ -z ${IPv6_addr} ]]; then
-        echo -e "${MSG_error} 无效输入！"
+        log ERROR "无效输入！"
         Get_IPv6_addr
     fi
 }
 
 Generate_WireGuardProfile_Interface() {
-    echo -e "${MSG_info} WireGuard profile (${WireGuardConfPath}) generation in progress..."
+    log INFO "WireGuard profile (${WireGuardConfPath}) generation in progress..."
     cat <<EOF >${WireGuardConfPath}
 [Interface]
 PrivateKey = ${WGCF_PrivateKey}
@@ -743,7 +766,7 @@ Check_ALL_Status() {
 }
 
 Print_WARP_Client_Status() {
-    echo -e "${MSG_info} Status check in progress..."
+    log INFO "Status check in progress..."
     Check_WARP_Client_Status
     Check_WARP_Proxy_Status
     echo -e "
@@ -752,11 +775,11 @@ Print_WARP_Client_Status() {
  SOCKS5 Port\t: ${WARP_Proxy_Status_en}
  ----------------------------
 "
-    echo -e "${MSG_info} Done."
+    log INFO "Done."
 }
 
 Print_WARP_WireGuard_Status() {
-    echo -e "${MSG_info} Status check in progress..."
+    log INFO "Status check in progress..."
     Check_WireGuard_Status
     Check_WARP_WireGuard_Status
     echo -e "
@@ -766,11 +789,11 @@ Print_WARP_WireGuard_Status() {
  IPv6 Network\t: ${WARP_IPv6_Status_en}
  ----------------------------
 "
-    echo -e "${MSG_info} Done."
+    log INFO "Done."
 }
 
 Print_ALL_Status() {
-    echo -e "${MSG_info} Status check in progress..."
+    log INFO "Status check in progress..."
     Check_ALL_Status
     echo -e "
  ----------------------------
@@ -949,16 +972,16 @@ Change_WARP_DualStack_IPv6Out() {
 Menu_DualStack() {
     clear
     echo -e "
-${FontColor_LightYellow}Cloudflare WARP 一键配置脚本${FontColor_Suffix} ${FontColor_Red}[${shVersion}]${FontColor_Suffix} by ${FontColor_LightPurple}P3TERX.COM${FontColor_Suffix}
+${FontColor_Yellow_Bold}Cloudflare WARP 一键配置脚本${FontColor_Suffix} ${FontColor_Red}[${shVersion}]${FontColor_Suffix} by ${FontColor_Purple_Bold}P3TERX.COM${FontColor_Suffix}
 
- ${FontColor_Green}0.${FontColor_Suffix} 返回主菜单
+ ${FontColor_Green_Bold}0${FontColor_Suffix}. 返回主菜单
  -
- ${FontColor_Green}1.${FontColor_Suffix} 置换 IPv4 为 WARP 网络
- ${FontColor_Green}2.${FontColor_Suffix} 置换 IPv6 为 WARP 网络
- ${FontColor_Green}3.${FontColor_Suffix} 置换 IPv4/IPv6 为 WARP 网络 (IPv4 节点)
- ${FontColor_Green}4.${FontColor_Suffix} 置换 IPv4/IPv6 为 WARP 网络 (IPv6 节点)
- ${FontColor_Green}5.${FontColor_Suffix} 添加 WARP IPv4 网络，置换 IPv6 为 WARP 网络
- ${FontColor_Green}6.${FontColor_Suffix} 添加 WARP IPv6 网络，置换 IPv4 为 WARP 网络
+ ${FontColor_Green_Bold}1${FontColor_Suffix}. 置换 IPv4 为 WARP 网络
+ ${FontColor_Green_Bold}2${FontColor_Suffix}. 置换 IPv6 为 WARP 网络
+ ${FontColor_Green_Bold}3${FontColor_Suffix}. 置换 IPv4/IPv6 为 WARP 网络 (IPv4 节点)
+ ${FontColor_Green_Bold}4${FontColor_Suffix}. 置换 IPv4/IPv6 为 WARP 网络 (IPv6 节点)
+ ${FontColor_Green_Bold}5${FontColor_Suffix}. 添加 WARP IPv4 网络，置换 IPv6 为 WARP 网络
+ ${FontColor_Green_Bold}6${FontColor_Suffix}. 添加 WARP IPv6 网络，置换 IPv4 为 WARP 网络
 "
     unset MenuNumber
     read -p "请输入选项: " MenuNumber
@@ -986,7 +1009,7 @@ ${FontColor_LightYellow}Cloudflare WARP 一键配置脚本${FontColor_Suffix} ${
         Add_WARP_IPv6__Change_WARP_IPv4
         ;;
     *)
-        echo -e "${MSG_error} 无效输入！"
+        log ERROR "无效输入！"
         sleep 2s
         Menu_DualStack
         ;;
@@ -996,17 +1019,17 @@ ${FontColor_LightYellow}Cloudflare WARP 一键配置脚本${FontColor_Suffix} ${
 Menu_Other() {
     clear
     echo -e "
-${FontColor_LightYellow}Cloudflare WARP 一键配置脚本${FontColor_Suffix} ${FontColor_Red}[${shVersion}]${FontColor_Suffix} by ${FontColor_LightPurple}P3TERX.COM${FontColor_Suffix}
+${FontColor_Yellow_Bold}Cloudflare WARP 一键配置脚本${FontColor_Suffix} ${FontColor_Red}[${shVersion}]${FontColor_Suffix} by ${FontColor_Purple_Bold}P3TERX.COM${FontColor_Suffix}
 
- ${FontColor_Green}0.${FontColor_Suffix} 返回主菜单
+ ${FontColor_Green_Bold}0${FontColor_Suffix}. 返回主菜单
  -
- ${FontColor_Green}1.${FontColor_Suffix} 关闭 WARP 官方客户端 SOCKS5 代理
- ${FontColor_Green}2.${FontColor_Suffix} 卸载 WARP 官方客户端
+ ${FontColor_Green_Bold}1${FontColor_Suffix}. 关闭 WARP 官方客户端 SOCKS5 代理
+ ${FontColor_Green_Bold}2${FontColor_Suffix}. 卸载 WARP 官方客户端
  -
- ${FontColor_Green}3.${FontColor_Suffix} 查看 WARP WireGuard 日志
- ${FontColor_Green}4.${FontColor_Suffix} 重启 WARP WireGuard 服务
- ${FontColor_Green}5.${FontColor_Suffix} 停止 WARP WireGuard 服务
- ${FontColor_Green}6.${FontColor_Suffix} 关闭 WARP WireGuard 网络
+ ${FontColor_Green_Bold}3${FontColor_Suffix}. 查看 WARP WireGuard 日志
+ ${FontColor_Green_Bold}4${FontColor_Suffix}. 重启 WARP WireGuard 服务
+ ${FontColor_Green_Bold}5${FontColor_Suffix}. 停止 WARP WireGuard 服务
+ ${FontColor_Green_Bold}6${FontColor_Suffix}. 关闭 WARP WireGuard 网络
 "
     unset MenuNumber
     read -p "请输入选项: " MenuNumber
@@ -1034,7 +1057,7 @@ ${FontColor_LightYellow}Cloudflare WARP 一键配置脚本${FontColor_Suffix} ${
         Disable_WireGuard
         ;;
     *)
-        echo -e "${MSG_error} 无效输入！"
+        log ERROR "无效输入！"
         sleep 2s
         Menu_Other
         ;;
@@ -1042,11 +1065,11 @@ ${FontColor_LightYellow}Cloudflare WARP 一键配置脚本${FontColor_Suffix} ${
 }
 
 Start_Menu() {
-    echo -e "${MSG_info} 正在检查状态..."
+    log INFO "正在检查状态..."
     Check_ALL_Status
     clear
     echo -e "
-${FontColor_LightYellow}Cloudflare WARP 一键配置脚本${FontColor_Suffix} ${FontColor_Red}[${shVersion}]${FontColor_Suffix} by ${FontColor_LightPurple}P3TERX.COM${FontColor_Suffix}
+${FontColor_Yellow_Bold}Cloudflare WARP 一键配置脚本${FontColor_Suffix} ${FontColor_Red_Bold}[${shVersion}]${FontColor_Suffix} by ${FontColor_Purple_Bold}P3TERX.COM${FontColor_Suffix}
 
  -------------------------
  WARP 客户端状态 : ${WARP_Client_Status_zh}
@@ -1057,12 +1080,12 @@ ${FontColor_LightYellow}Cloudflare WARP 一键配置脚本${FontColor_Suffix} ${
  IPv6 网络状态  : ${WARP_IPv6_Status_zh}
  -------------------------
 
- ${FontColor_Green}1.${FontColor_Suffix} 自动配置 WARP 官方客户端 SOCKS5 代理
- ${FontColor_Green}2.${FontColor_Suffix} 自动配置 WARP WireGuard IPv4 网络
- ${FontColor_Green}3.${FontColor_Suffix} 自动配置 WARP WireGuard IPv6 网络
- ${FontColor_Green}4.${FontColor_Suffix} 自动配置 WARP WireGuard 双栈全局网络
- ${FontColor_Green}5.${FontColor_Suffix} 手动选择 WARP WireGuard 双栈配置方案
- ${FontColor_Green}6.${FontColor_Suffix} 其它选项
+ ${FontColor_Green_Bold}1${FontColor_Suffix}. 自动配置 WARP 官方客户端 SOCKS5 代理
+ ${FontColor_Green_Bold}2${FontColor_Suffix}. 自动配置 WARP WireGuard IPv4 网络
+ ${FontColor_Green_Bold}3${FontColor_Suffix}. 自动配置 WARP WireGuard IPv6 网络
+ ${FontColor_Green_Bold}4${FontColor_Suffix}. 自动配置 WARP WireGuard 双栈全局网络
+ ${FontColor_Green_Bold}5${FontColor_Suffix}. 手动选择 WARP WireGuard 双栈配置方案
+ ${FontColor_Green_Bold}6${FontColor_Suffix}. 其它选项
 "
     unset MenuNumber
     read -p "请输入选项: " MenuNumber
@@ -1087,7 +1110,7 @@ ${FontColor_LightYellow}Cloudflare WARP 一键配置脚本${FontColor_Suffix} ${
         Menu_Other
         ;;
     *)
-        echo -e "${MSG_error} 无效输入！"
+        log ERROR "无效输入！"
         sleep 2s
         Start_Menu
         ;;
@@ -1160,7 +1183,7 @@ if [ $# -ge 1 ]; then
         Start_Menu
         ;;
     *)
-        echo -e "${MSG_error} Invalid Parameters: $*"
+        log ERROR "Invalid Parameters: $*"
         Print_Usage
         exit 1
         ;;
