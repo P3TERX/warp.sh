@@ -3,7 +3,7 @@
 # https://github.com/P3TERX/warp.sh
 # Description: Cloudflare WARP configuration script
 # System Required: Debian, Ubuntu, CentOS
-# Version: beta14
+# Version: beta15
 #
 # MIT License
 #
@@ -28,7 +28,7 @@
 # SOFTWARE.
 #
 
-shVersion='beta14'
+shVersion='beta15'
 
 FontColor_Red="\033[31m"
 FontColor_Red_Bold="\033[1;31m"
@@ -81,10 +81,14 @@ WireGuardConfPath='/etc/wireguard/wgcf.conf'
 WGCF_Profile='wgcf-profile.conf'
 WGCF_SavePath="${HOME}/.wgcf"
 WGCF_Profile_Path="${WGCF_SavePath}/${WGCF_Profile}"
-WGCF_DNS_46='8.8.8.8,8.8.4.4,2001:4860:4860::8888,2001:4860:4860::8844'
-WGCF_DNS_64='2001:4860:4860::8888,2001:4860:4860::8844,8.8.8.8,8.8.4.4'
-WGCF_Endpoint_IPv4='162.159.192.1:2408'
-WGCF_Endpoint_IPv6='[2606:4700:d0::a29f:c001]:2408'
+WGCF_DNS_IPv4='8.8.8.8,8.8.4.4'
+WGCF_DNS_IPv6='2001:4860:4860::8888,2001:4860:4860::8844'
+WGCF_DNS_46="${WGCF_DNS_IPv4},${WGCF_DNS_IPv6}"
+WGCF_DNS_64="${WGCF_DNS_IPv6},${WGCF_DNS_IPv4}"
+WGCF_Endpoint_IP4='162.159.192.1'
+WGCF_Endpoint_IP6='2606:4700:d0::a29f:c001'
+WGCF_Endpoint_IPv4="${WGCF_Endpoint_IP4}:2408"
+WGCF_Endpoint_IPv6="[${WGCF_Endpoint_IP6}]:2408"
 WGCF_Endpoint_Domain='engage.cloudflareclient.com:2408'
 WGCF_AllowedIPs_IPv4='0.0.0.0/0'
 WGCF_AllowedIPs_IPv6='::/0'
@@ -813,17 +817,27 @@ View_WireGuard_Profile() {
     Print_Delimiter
 }
 
+Check_WGCF_Endpoint() {
+    if ping -c1 -W1 ${WGCF_Endpoint_IP4} >/dev/null 2>&1; then
+        WGCF_Endpoint="${WGCF_Endpoint_IPv4}"
+    elif ping6 -c1 -W1 ${WGCF_Endpoint_IP6} >/dev/null 2>&1; then
+        WGCF_Endpoint="${WGCF_Endpoint_IPv6}"
+    else
+        WGCF_Endpoint="${WGCF_Endpoint_Domain}"
+    fi
+}
+
 Set_WARP_IPv4() {
     Install_WireGuard
     Get_IP_addr
     Load_WGCF_Profile
-    if [[ ${IPv4Status} = on ]]; then
-        WGCF_DNS="${WGCF_DNS_46}"
-    else
+    if [[ ${IPv4Status} = off && ${IPv6Status} = on ]]; then
         WGCF_DNS="${WGCF_DNS_64}"
+    else
+        WGCF_DNS="${WGCF_DNS_46}"
     fi
     WGCF_AllowedIPs="${WGCF_AllowedIPs_IPv4}"
-    WGCF_Endpoint="${WGCF_Endpoint_Domain}"
+    Check_WGCF_Endpoint
     Generate_WireGuardProfile_Interface
     if [[ -n ${IPv4_addr} ]]; then
         Generate_WireGuardProfile_Interface_IPv4Rule
@@ -838,13 +852,13 @@ Set_WARP_IPv6() {
     Install_WireGuard
     Get_IP_addr
     Load_WGCF_Profile
-    if [[ ${IPv4Status} = on ]]; then
-        WGCF_DNS="${WGCF_DNS_46}"
-    else
+    if [[ ${IPv4Status} = off && ${IPv6Status} = on ]]; then
         WGCF_DNS="${WGCF_DNS_64}"
+    else
+        WGCF_DNS="${WGCF_DNS_46}"
     fi
     WGCF_AllowedIPs="${WGCF_AllowedIPs_IPv6}"
-    WGCF_Endpoint="${WGCF_Endpoint_Domain}"
+    Check_WGCF_Endpoint
     Generate_WireGuardProfile_Interface
     if [[ -n ${IPv6_addr} ]]; then
         Generate_WireGuardProfile_Interface_IPv6Rule
@@ -861,7 +875,7 @@ Set_WARP_DualStack() {
     Load_WGCF_Profile
     WGCF_DNS="${WGCF_DNS_46}"
     WGCF_AllowedIPs="${WGCF_AllowedIPs_DualStack}"
-    WGCF_Endpoint="${WGCF_Endpoint_Domain}"
+    Check_WGCF_Endpoint
     Generate_WireGuardProfile_Interface
     if [[ -n ${IPv4_addr} ]]; then
         Generate_WireGuardProfile_Interface_IPv4Rule
