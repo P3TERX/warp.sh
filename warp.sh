@@ -3,7 +3,7 @@
 # https://github.com/P3TERX/warp.sh
 # Description: Cloudflare WARP configuration script
 # System Required: Debian, Ubuntu, CentOS
-# Version: beta16
+# Version: beta17
 #
 # MIT License
 #
@@ -28,7 +28,7 @@
 # SOFTWARE.
 #
 
-shVersion='beta16'
+shVersion='beta17'
 
 FontColor_Red="\033[31m"
 FontColor_Red_Bold="\033[1;31m"
@@ -191,6 +191,19 @@ Uninstall_WARP_Client() {
         exit 1
         ;;
     esac
+}
+
+Restart_WARP_Client() {
+    log INFO "Restarting Cloudflare WARP Client..."
+    systemctl restart warp-svc
+    Check_WARP_Client
+    if [[ ${WARP_Client_Status} = active ]]; then
+        log INFO "Cloudflare WARP Client has been restarted."
+    else
+        log ERROR "Cloudflare WARP Client failure to run!"
+        journalctl -u warp-svc --no-pager
+        exit 1
+    fi
 }
 
 Init_WARP_Client() {
@@ -1039,10 +1052,58 @@ Change_WARP_DualStack_IPv6Out() {
     Print_WARP_WireGuard_Status
 }
 
-Menu_DualStack() {
+Menu_Title="${FontColor_Yellow_Bold}Cloudflare WARP 一键配置脚本${FontColor_Suffix} ${FontColor_Red}[${shVersion}]${FontColor_Suffix} by ${FontColor_Purple_Bold}P3TERX.COM${FontColor_Suffix}"
+
+Menu_WARP_Client() {
     clear
     echo -e "
-${FontColor_Yellow_Bold}Cloudflare WARP 一键配置脚本${FontColor_Suffix} ${FontColor_Red}[${shVersion}]${FontColor_Suffix} by ${FontColor_Purple_Bold}P3TERX.COM${FontColor_Suffix}
+${Menu_Title}
+
+ -------------------------
+ WARP 客户端状态 : ${WARP_Client_Status_zh}
+ SOCKS5 代理端口 : ${WARP_Proxy_Status_zh}
+ -------------------------
+
+管理 WARP 官方客户端：
+
+ ${FontColor_Green_Bold}0${FontColor_Suffix}. 返回主菜单
+ -
+ ${FontColor_Green_Bold}1${FontColor_Suffix}. 开启 SOCKS5 代理
+ ${FontColor_Green_Bold}2${FontColor_Suffix}. 关闭 SOCKS5 代理
+ ${FontColor_Green_Bold}3${FontColor_Suffix}. 重启 WARP 官方客户端
+ ${FontColor_Green_Bold}4${FontColor_Suffix}. 卸载 WARP 官方客户端
+"
+    unset MenuNumber
+    read -p "请输入选项: " MenuNumber
+    echo
+    case ${MenuNumber} in
+    0)
+        Start_Menu
+        ;;
+    1)
+        Enable_WARP_Client_Proxy
+        ;;
+    2)
+        Disconnect_WARP
+        ;;
+    3)
+        Restart_WARP_Client
+        ;;
+    4)
+        Uninstall_WARP_Client
+        ;;
+    *)
+        log ERROR "无效输入！"
+        sleep 2s
+        Menu_WARP_Client
+        ;;
+    esac
+}
+
+Menu_WARP_WireGuard_Other() {
+    clear
+    echo -e "
+${Menu_Title}
 
  ${FontColor_Green_Bold}0${FontColor_Suffix}. 返回主菜单
  -
@@ -1086,20 +1147,24 @@ ${FontColor_Yellow_Bold}Cloudflare WARP 一键配置脚本${FontColor_Suffix} ${
     esac
 }
 
-Menu_Other() {
+Menu_WARP_WireGuard() {
     clear
     echo -e "
-${FontColor_Yellow_Bold}Cloudflare WARP 一键配置脚本${FontColor_Suffix} ${FontColor_Red}[${shVersion}]${FontColor_Suffix} by ${FontColor_Purple_Bold}P3TERX.COM${FontColor_Suffix}
+${Menu_Title}
+
+ -------------------------
+ WireGuard 状态 : ${WireGuard_Status_zh}
+ IPv4 网络状态  : ${WARP_IPv4_Status_zh}
+ IPv6 网络状态  : ${WARP_IPv6_Status_zh}
+ -------------------------
+
+管理 WARP WireGuard：
 
  ${FontColor_Green_Bold}0${FontColor_Suffix}. 返回主菜单
  -
- ${FontColor_Green_Bold}1${FontColor_Suffix}. 关闭 WARP 官方客户端 SOCKS5 代理
- ${FontColor_Green_Bold}2${FontColor_Suffix}. 卸载 WARP 官方客户端
- -
- ${FontColor_Green_Bold}3${FontColor_Suffix}. 查看 WARP WireGuard 日志
- ${FontColor_Green_Bold}4${FontColor_Suffix}. 重启 WARP WireGuard 服务
- ${FontColor_Green_Bold}5${FontColor_Suffix}. 停止 WARP WireGuard 服务
- ${FontColor_Green_Bold}6${FontColor_Suffix}. 关闭 WARP WireGuard 网络
+ ${FontColor_Green_Bold}1${FontColor_Suffix}. 查看 WARP WireGuard 日志
+ ${FontColor_Green_Bold}2${FontColor_Suffix}. 重启 WARP WireGuard 服务
+ ${FontColor_Green_Bold}3${FontColor_Suffix}. 关闭 WARP WireGuard 网络
 "
     unset MenuNumber
     read -p "请输入选项: " MenuNumber
@@ -1109,21 +1174,12 @@ ${FontColor_Yellow_Bold}Cloudflare WARP 一键配置脚本${FontColor_Suffix} ${
         Start_Menu
         ;;
     1)
-        Disconnect_WARP
-        ;;
-    2)
-        Uninstall_WARP_Client
-        ;;
-    3)
         Print_WireGuard_Log
         ;;
-    4)
+    2)
         Restart_WireGuard
         ;;
-    5)
-        Stop_WireGuard
-        ;;
-    6)
+    3)
         Disable_WireGuard
         ;;
     *)
@@ -1139,7 +1195,7 @@ Start_Menu() {
     Check_ALL_Status
     clear
     echo -e "
-${FontColor_Yellow_Bold}Cloudflare WARP 一键配置脚本${FontColor_Suffix} ${FontColor_Red_Bold}[${shVersion}]${FontColor_Suffix} by ${FontColor_Purple_Bold}P3TERX.COM${FontColor_Suffix}
+${Menu_Title}
 
  -------------------------
  WARP 客户端状态 : ${WARP_Client_Status_zh}
@@ -1151,11 +1207,13 @@ ${FontColor_Yellow_Bold}Cloudflare WARP 一键配置脚本${FontColor_Suffix} ${
  -------------------------
 
  ${FontColor_Green_Bold}1${FontColor_Suffix}. 自动配置 WARP 官方客户端 SOCKS5 代理
- ${FontColor_Green_Bold}2${FontColor_Suffix}. 自动配置 WARP WireGuard IPv4 网络
- ${FontColor_Green_Bold}3${FontColor_Suffix}. 自动配置 WARP WireGuard IPv6 网络
- ${FontColor_Green_Bold}4${FontColor_Suffix}. 自动配置 WARP WireGuard 双栈全局网络
- ${FontColor_Green_Bold}5${FontColor_Suffix}. 手动选择 WARP WireGuard 双栈配置方案
- ${FontColor_Green_Bold}6${FontColor_Suffix}. 其它选项
+ ${FontColor_Green_Bold}2${FontColor_Suffix}. 管理 WARP 官方客户端
+ -
+ ${FontColor_Green_Bold}3${FontColor_Suffix}. 自动配置 WARP WireGuard IPv4 网络
+ ${FontColor_Green_Bold}4${FontColor_Suffix}. 自动配置 WARP WireGuard IPv6 网络
+ ${FontColor_Green_Bold}5${FontColor_Suffix}. 自动配置 WARP WireGuard 双栈全局网络
+ ${FontColor_Green_Bold}6${FontColor_Suffix}. 选择其它 WARP WireGuard 配置方案
+ ${FontColor_Green_Bold}7${FontColor_Suffix}. 管理 WARP WireGuard 网络
 "
     unset MenuNumber
     read -p "请输入选项: " MenuNumber
@@ -1165,19 +1223,22 @@ ${FontColor_Yellow_Bold}Cloudflare WARP 一键配置脚本${FontColor_Suffix} ${
         Enable_WARP_Client_Proxy
         ;;
     2)
-        Set_WARP_IPv4
+        Menu_WARP_Client
         ;;
     3)
-        Set_WARP_IPv6
+        Set_WARP_IPv4
         ;;
     4)
-        Set_WARP_DualStack
+        Set_WARP_IPv6
         ;;
     5)
-        Menu_DualStack
+        Set_WARP_DualStack
         ;;
     6)
-        Menu_Other
+        Menu_WARP_WireGuard_Other
+        ;;
+    7)
+        Menu_WARP_WireGuard
         ;;
     *)
         log ERROR "无效输入！"
@@ -1197,6 +1258,7 @@ USAGE:
 SUBCOMMANDS:
     install         Install Cloudflare WARP Official Linux Client
     uninstall       uninstall Cloudflare WARP Official Linux Client
+    restart         Restart Cloudflare WARP Official Linux Client
     proxy           Enable WARP Client Proxy Mode (default SOCKS5 port: 40000)
     unproxy         Disable WARP Client Proxy Mode
     wg              Configuration WARP Non-Global Network (with WireGuard), set fwmark or interface IP Address to use the WARP network
@@ -1219,6 +1281,9 @@ if [ $# -ge 1 ]; then
         ;;
     uninstall)
         Uninstall_WARP_Client
+        ;;
+    restart)
+        Restart_WARP_Client
         ;;
     proxy | socks5 | s5)
         Enable_WARP_Client_Proxy
