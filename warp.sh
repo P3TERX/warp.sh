@@ -3,7 +3,7 @@
 # https://github.com/P3TERX/warp.sh
 # Description: Cloudflare WARP configuration script
 # System Required: Debian, Ubuntu, CentOS
-# Version: beta18
+# Version: beta19
 #
 # MIT License
 #
@@ -28,7 +28,7 @@
 # SOFTWARE.
 #
 
-shVersion='beta18'
+shVersion='beta19'
 
 FontColor_Red="\033[31m"
 FontColor_Red_Bold="\033[1;31m"
@@ -124,10 +124,6 @@ System Information
 }
 
 Install_Requirements_Debian() {
-    if [[ ! $(command -v lsb_release) ]]; then
-        apt update
-        apt install lsb-release -y
-    fi
     if [[ ! $(command -v gpg) ]]; then
         apt update
         apt install gnupg -y
@@ -141,23 +137,21 @@ Install_Requirements_Debian() {
 Instal_WARP_Client_Debian() {
     Install_Requirements_Debian
     curl https://pkg.cloudflareclient.com/pubkey.gpg | apt-key add -
-    echo "deb http://pkg.cloudflareclient.com/ $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/cloudflare-client.list
-    apt update
-    apt install cloudflare-warp -y
-}
-
-Instal_WARP_Client_Ubuntu() {
-    Install_Requirements_Debian
-    curl https://pkg.cloudflareclient.com/pubkey.gpg | apt-key add -
-    #echo "deb http://pkg.cloudflareclient.com/ $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/cloudflare-client.list
-    echo "deb http://pkg.cloudflareclient.com/ focal main" | tee /etc/apt/sources.list.d/cloudflare-client.list
+    if [[ ${ID} = ubuntu ]]; then
+        OS_CodeName='focal'
+    elif [[ ${ID_LIKE} = *debian* ]]; then
+        OS_CodeName='buster'
+    else
+        OS_CodeName="${VERSION_CODENAME}"
+    fi
+    echo "deb http://pkg.cloudflareclient.com/ ${OS_CodeName} main" | tee /etc/apt/sources.list.d/cloudflare-client.list
     apt update
     apt install cloudflare-warp -y
 }
 
 Instal_WARP_Client_CentOS() {
-    rpm -ivh http://pkg.cloudflareclient.com/cloudflare-release-el${VERSION_MAJOR}.rpm
-    if [[ $? = 0 ]]; then
+    if [[ ${VERSION_MAJOR} = 8 ]]; then
+        rpm -ivh http://pkg.cloudflareclient.com/cloudflare-release-el${VERSION_MAJOR}.rpm
         yum install cloudflare-warp -y
     else
         log ERROR "This operating system is not supported."
@@ -173,18 +167,21 @@ Check_WARP_Client() {
 Instal_WARP_Client() {
     Print_System_Info
     log INFO "Installing Cloudflare WARP Client..."
+    if [[ ${ARCH} != x86_64 ]]; then
+        log ERROR "This CPU architecture is not supported: ${ARCH}"
+        exit 1
+    fi
     case ${ID} in
-    *debian*)
+    *debian* | *ubuntu*)
         Instal_WARP_Client_Debian
-        ;;
-    *ubuntu*)
-        Instal_WARP_Client_Ubuntu
         ;;
     *centos* | *rhel*)
         Instal_WARP_Client_CentOS
         ;;
     *)
-        if [[ ${ID_LIKE} = *rhel* ]]; then
+        if [[ ${ID_LIKE} = *debian* ]]; then
+            Instal_WARP_Client_Debian
+        elif [[ ${ID_LIKE} = *rhel* ]]; then
             Instal_WARP_Client_CentOS
         else
             log ERROR "This operating system is not supported."
@@ -241,7 +238,7 @@ Init_WARP_Client() {
         Instal_WARP_Client
     fi
     yes | warp-cli
-    if [[ $(warp-cli account) = MissingRegistration ]]; then
+    if [[ $(warp-cli account) = *Missing* ]]; then
         log INFO "Cloudflare WARP Account Registration in progress..."
         warp-cli register
     fi
