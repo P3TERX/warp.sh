@@ -3,7 +3,7 @@
 # https://github.com/P3TERX/warp.sh
 # Description: Cloudflare WARP configuration script
 # System Required: Debian, Ubuntu, CentOS
-# Version: beta17
+# Version: beta18
 #
 # MIT License
 #
@@ -28,7 +28,7 @@
 # SOFTWARE.
 #
 
-shVersion='beta17'
+shVersion='beta18'
 
 FontColor_Red="\033[31m"
 FontColor_Red_Bold="\033[1;31m"
@@ -76,7 +76,6 @@ if [[ -z $(command -v curl) ]]; then
     exit 1
 fi
 
-OS_ID=$(cat /etc/os-release | grep ^ID=)
 WireGuard_table='51888'
 WireGuard_fwmark='51888'
 WireGuard_Interface='wgcf'
@@ -101,6 +100,28 @@ TestIPv4_2='9.9.9.9'
 TestIPv6_1='2001:4860:4860::8888'
 TestIPv6_2='2620:fe::fe'
 CF_Trace_URL='https://www.cloudflare.com/cdn-cgi/trace'
+
+Get_System_Info() {
+    source /etc/os-release
+    VERSION_MAJOR="$(echo ${VERSION_ID} | cut -d. -f1)"
+    VIRT="$(systemd-detect-virt)"
+    KERNEL="$(uname -r)"
+    KernelVer_major="$(uname -r | awk -F . '{print $1}')"
+    KernelVer_minor="$(uname -r | awk -F . '{print $2}')"
+    ARCH="$(uname -m)"
+}
+
+Print_System_Info() {
+    echo -e "
+System Information
+----------------------------------------------------
+ Operating System: ${PRETTY_NAME}
+     Linux Kernel: ${KERNEL}
+     Architecture: ${ARCH}
+   Virtualization: ${VIRT}
+----------------------------------------------------
+"
+}
 
 Install_Requirements_Debian() {
     if [[ ! $(command -v lsb_release) ]]; then
@@ -135,8 +156,7 @@ Instal_WARP_Client_Ubuntu() {
 }
 
 Instal_WARP_Client_CentOS() {
-    CentOS_Version=$(cat /etc/redhat-release | sed -r 's/.* ([0-9]+)\..*/\1/')
-    rpm -ivh http://pkg.cloudflareclient.com/cloudflare-release-el${CentOS_Version}.rpm
+    rpm -ivh http://pkg.cloudflareclient.com/cloudflare-release-el${VERSION_MAJOR}.rpm
     if [[ $? = 0 ]]; then
         yum install cloudflare-warp -y
     else
@@ -151,8 +171,9 @@ Check_WARP_Client() {
 }
 
 Instal_WARP_Client() {
+    Print_System_Info
     log INFO "Installing Cloudflare WARP Client..."
-    case ${OS_ID} in
+    case ${ID} in
     *debian*)
         Instal_WARP_Client_Debian
         ;;
@@ -163,8 +184,12 @@ Instal_WARP_Client() {
         Instal_WARP_Client_CentOS
         ;;
     *)
-        log ERROR "This operating system is not supported."
-        exit 1
+        if [[ ${ID_LIKE} = *rhel* ]]; then
+            Instal_WARP_Client_CentOS
+        else
+            log ERROR "This operating system is not supported."
+            exit 1
+        fi
         ;;
     esac
     Check_WARP_Client
@@ -179,7 +204,7 @@ Instal_WARP_Client() {
 
 Uninstall_WARP_Client() {
     log INFO "Uninstalling Cloudflare WARP Client..."
-    case ${OS_ID} in
+    case ${ID} in
     *debian* | *ubuntu*)
         apt purge cloudflare-warp -y
         ;;
@@ -187,8 +212,12 @@ Uninstall_WARP_Client() {
         yum remove cloudflare-warp -y
         ;;
     *)
-        log ERROR "This operating system is not supported."
-        exit 1
+        if [[ ${ID_LIKE} = *rhel* ]]; then
+            yum remove cloudflare-warp -y
+        else
+            log ERROR "This operating system is not supported."
+            exit 1
+        fi
         ;;
     esac
 }
@@ -305,12 +334,7 @@ Load_WGCF_Profile() {
 }
 
 Install_WireGuardTools_Debian() {
-    if [[ ! $(command -v lsb_release) ]]; then
-        apt update
-        apt install lsb-release -y
-    fi
-    DebianVer=$(lsb_release -sr | cut -d. -f1)
-    case ${DebianVer} in
+    case ${VERSION_MAJOR} in
     10)
         if [[ -z $(grep "^deb.*buster-backports.*main" /etc/apt/sources.list{,.d/*}) ]]; then
             echo "deb http://deb.debian.org/debian buster-backports main" | tee /etc/apt/sources.list.d/backports.list
@@ -323,7 +347,7 @@ Install_WireGuardTools_Debian() {
         fi
         ;;
     *)
-        if [[ ${DebianVer} -lt 9 ]]; then
+        if [[ ${VERSION_MAJOR} -lt 9 ]]; then
             log ERROR "This operating system is not supported."
             exit 1
         fi
@@ -356,7 +380,7 @@ Install_WireGuardTools_Arch() {
 
 Install_WireGuardTools() {
     log INFO "Installing wireguard-tools..."
-    case ${OS_ID} in
+    case ${ID} in
     *debian*)
         Install_WireGuardTools_Debian
         ;;
@@ -373,18 +397,27 @@ Install_WireGuardTools() {
         Install_WireGuardTools_Arch
         ;;
     *)
-        log ERROR "This operating system is not supported."
-        exit 1
+        if [[ ${ID_LIKE} = *rhel* ]]; then
+            Install_WireGuardTools_CentOS
+        else
+            log ERROR "This operating system is not supported."
+            exit 1
+        fi
         ;;
     esac
 }
 
 Install_WireGuardGo() {
-    KernelVer1=$(uname -r | awk -F . '{print $1}')
-    KernelVer2=$(uname -r | awk -F . '{print $2}')
-    if [[ ${KernelVer1} -lt 5 || ${KernelVer2} -lt 6 ]]; then
+    case ${VIRT} in
+    openvz | lxc*)
         curl -fsSL git.io/wireguard-go.sh | bash
-    fi
+        ;;
+    *)
+        if [[ ${KernelVer_major} -lt 5 || ${KernelVer_minor} -lt 6 ]]; then
+            curl -fsSL git.io/wireguard-go.sh | bash
+        fi
+        ;;
+    esac
 }
 
 Check_WireGuard() {
@@ -393,6 +426,7 @@ Check_WireGuard() {
 }
 
 Install_WireGuard() {
+    Print_System_Info
     Check_WireGuard
     if [[ ${WireGuard_SelfStart} != enabled || ${WireGuard_Status} != active ]]; then
         Install_WireGuardTools
@@ -1275,6 +1309,7 @@ SUBCOMMANDS:
 }
 
 if [ $# -ge 1 ]; then
+    Get_System_Info
     case ${1} in
     install)
         Instal_WARP_Client
