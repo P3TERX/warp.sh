@@ -3,7 +3,7 @@
 # https://github.com/P3TERX/warp.sh
 # Description: Cloudflare WARP configuration script
 # System Required: Debian, Ubuntu, CentOS
-# Version: beta19
+# Version: beta20
 #
 # MIT License
 #
@@ -28,7 +28,7 @@
 # SOFTWARE.
 #
 
-shVersion='beta19'
+shVersion='beta20'
 
 FontColor_Red="\033[31m"
 FontColor_Red_Bold="\033[1;31m"
@@ -76,25 +76,30 @@ if [[ -z $(command -v curl) ]]; then
     exit 1
 fi
 
-WireGuard_table='51888'
-WireGuard_fwmark='51888'
-WireGuard_Interface='wgcf'
-WireGuardConfPath="/etc/wireguard/${WireGuard_Interface}.conf"
 WGCF_Profile='wgcf-profile.conf'
-WGCF_SavePath="${HOME}/.wgcf"
-WGCF_Profile_Path="${WGCF_SavePath}/${WGCF_Profile}"
-WGCF_DNS_IPv4='8.8.8.8,8.8.4.4'
-WGCF_DNS_IPv6='2001:4860:4860::8888,2001:4860:4860::8844'
-WGCF_DNS_46="${WGCF_DNS_IPv4},${WGCF_DNS_IPv6}"
-WGCF_DNS_64="${WGCF_DNS_IPv6},${WGCF_DNS_IPv4}"
-WGCF_Endpoint_IP4='162.159.192.1'
-WGCF_Endpoint_IP6='2606:4700:d0::a29f:c001'
-WGCF_Endpoint_IPv4="${WGCF_Endpoint_IP4}:2408"
-WGCF_Endpoint_IPv6="[${WGCF_Endpoint_IP6}]:2408"
-WGCF_Endpoint_Domain='engage.cloudflareclient.com:2408'
-WGCF_AllowedIPs_IPv4='0.0.0.0/0'
-WGCF_AllowedIPs_IPv6='::/0'
-WGCF_AllowedIPs_DualStack='0.0.0.0/0,::/0'
+WGCF_ProfileDir="${HOME}/.wgcf"
+WGCF_ProfilePath="${WGCF_ProfileDir}/${WGCF_Profile}"
+
+WireGuard_Interface='wgcf'
+WireGuard_ConfPath="/etc/wireguard/${WireGuard_Interface}.conf"
+
+WireGuard_Interface_DNS_IPv4='8.8.8.8,8.8.4.4'
+WireGuard_Interface_DNS_IPv6='2001:4860:4860::8888,2001:4860:4860::8844'
+WireGuard_Interface_DNS_46="${WireGuard_Interface_DNS_IPv4},${WireGuard_Interface_DNS_IPv6}"
+WireGuard_Interface_DNS_64="${WireGuard_Interface_DNS_IPv6},${WireGuard_Interface_DNS_IPv4}"
+WireGuard_Interface_Rule_table='51888'
+WireGuard_Interface_Rule_fwmark='51888'
+WireGuard_Interface_MTU='1280'
+
+WireGuard_Peer_Endpoint_IP4='162.159.192.1'
+WireGuard_Peer_Endpoint_IP6='2606:4700:d0::a29f:c001'
+WireGuard_Peer_Endpoint_IPv4="${WireGuard_Peer_Endpoint_IP4}:2408"
+WireGuard_Peer_Endpoint_IPv6="[${WireGuard_Peer_Endpoint_IP6}]:2408"
+WireGuard_Peer_Endpoint_Domain='engage.cloudflareclient.com:2408'
+WireGuard_Peer_AllowedIPs_IPv4='0.0.0.0/0'
+WireGuard_Peer_AllowedIPs_IPv6='::/0'
+WireGuard_Peer_AllowedIPs_DualStack='0.0.0.0/0,::/0'
+
 TestIPv4_1='8.8.8.8'
 TestIPv4_2='9.9.9.9'
 TestIPv6_1='2001:4860:4860::8888'
@@ -305,23 +310,23 @@ Generate_WGCF_Profile() {
 }
 
 Backup_WGCF_Profile() {
-    mkdir -p ${WGCF_SavePath}
-    mv -f wgcf* ${WGCF_SavePath}
+    mkdir -p ${WGCF_ProfileDir}
+    mv -f wgcf* ${WGCF_ProfileDir}
 }
 
 Read_WGCF_Profile() {
-    WGCF_PrivateKey=$(cat ${WGCF_Profile_Path} | grep ^PrivateKey | cut -d= -f2- | awk '$1=$1')
-    WGCF_Address=$(cat ${WGCF_Profile_Path} | grep ^Address | cut -d= -f2- | awk '$1=$1' | sed ":a;N;s/\n/,/g;ta")
-    WGCF_PublicKey=$(cat ${WGCF_Profile_Path} | grep ^PublicKey | cut -d= -f2- | awk '$1=$1')
-    WGCF_Address_IPv4=$(echo ${WGCF_Address} | cut -d, -f1 | cut -d'/' -f1)
-    WGCF_Address_IPv6=$(echo ${WGCF_Address} | cut -d, -f2 | cut -d'/' -f1)
+    WireGuard_Interface_PrivateKey=$(cat ${WGCF_ProfilePath} | grep ^PrivateKey | cut -d= -f2- | awk '$1=$1')
+    WireGuard_Interface_Address=$(cat ${WGCF_ProfilePath} | grep ^Address | cut -d= -f2- | awk '$1=$1' | sed ":a;N;s/\n/,/g;ta")
+    WireGuard_Peer_PublicKey=$(cat ${WGCF_ProfilePath} | grep ^PublicKey | cut -d= -f2- | awk '$1=$1')
+    WireGuard_Interface_Address_IPv4=$(echo ${WireGuard_Interface_Address} | cut -d, -f1 | cut -d'/' -f1)
+    WireGuard_Interface_Address_IPv6=$(echo ${WireGuard_Interface_Address} | cut -d, -f2 | cut -d'/' -f1)
 }
 
 Load_WGCF_Profile() {
     if [[ -f ${WGCF_Profile} ]]; then
         Backup_WGCF_Profile
         Read_WGCF_Profile
-    elif [[ -f ${WGCF_Profile_Path} ]]; then
+    elif [[ -f ${WGCF_ProfilePath} ]]; then
         Read_WGCF_Profile
     else
         Generate_WGCF_Profile
@@ -663,41 +668,41 @@ Input_IPv6_addr() {
 }
 
 Generate_WireGuardProfile_Interface() {
-    log INFO "WireGuard profile (${WireGuardConfPath}) generation in progress..."
-    cat <<EOF >${WireGuardConfPath}
+    log INFO "WireGuard profile (${WireGuard_ConfPath}) generation in progress..."
+    cat <<EOF >${WireGuard_ConfPath}
 [Interface]
-PrivateKey = ${WGCF_PrivateKey}
-Address = ${WGCF_Address}
-DNS = ${WGCF_DNS}
-MTU = 1280
+PrivateKey = ${WireGuard_Interface_PrivateKey}
+Address = ${WireGuard_Interface_Address}
+DNS = ${WireGuard_Interface_DNS}
+MTU = ${WireGuard_Interface_MTU}
 EOF
 }
 
 Generate_WireGuardProfile_Interface_Rule_TableOff() {
-    cat <<EOF >>${WireGuardConfPath}
+    cat <<EOF >>${WireGuard_ConfPath}
 Table = off
 EOF
 }
 
 Generate_WireGuardProfile_Interface_Rule_IPv4_nonGlobal() {
-    cat <<EOF >>${WireGuardConfPath}
-PostUP = ip -4 route add default dev ${WireGuard_Interface} table ${WireGuard_table}
-PostUP = ip -4 rule add from ${WGCF_Address_IPv4} lookup ${WireGuard_table}
-PostDown = ip -4 rule delete from ${WGCF_Address_IPv4} lookup ${WireGuard_table}
-PostUP = ip -4 rule add fwmark ${WireGuard_fwmark} lookup ${WireGuard_table}
-PostDown = ip -4 rule delete fwmark ${WireGuard_fwmark} lookup ${WireGuard_table}
+    cat <<EOF >>${WireGuard_ConfPath}
+PostUP = ip -4 route add default dev ${WireGuard_Interface} table ${WireGuard_Interface_Rule_table}
+PostUP = ip -4 rule add from ${WireGuard_Interface_Address_IPv4} lookup ${WireGuard_Interface_Rule_table}
+PostDown = ip -4 rule delete from ${WireGuard_Interface_Address_IPv4} lookup ${WireGuard_Interface_Rule_table}
+PostUP = ip -4 rule add fwmark ${WireGuard_Interface_Rule_fwmark} lookup ${WireGuard_Interface_Rule_table}
+PostDown = ip -4 rule delete fwmark ${WireGuard_Interface_Rule_fwmark} lookup ${WireGuard_Interface_Rule_table}
 PostUP = ip -4 rule add table main suppress_prefixlength 0
 PostDown = ip -4 rule delete table main suppress_prefixlength 0
 EOF
 }
 
 Generate_WireGuardProfile_Interface_Rule_IPv6_nonGlobal() {
-    cat <<EOF >>${WireGuardConfPath}
-PostUP = ip -6 route add default dev ${WireGuard_Interface} table ${WireGuard_table}
-PostUP = ip -6 rule add from ${WGCF_Address_IPv6} lookup ${WireGuard_table}
-PostDown = ip -6 rule delete from ${WGCF_Address_IPv6} lookup ${WireGuard_table}
-PostUP = ip -6 rule add fwmark ${WireGuard_fwmark} lookup ${WireGuard_table}
-PostDown = ip -6 rule delete fwmark ${WireGuard_fwmark} lookup ${WireGuard_table}
+    cat <<EOF >>${WireGuard_ConfPath}
+PostUP = ip -6 route add default dev ${WireGuard_Interface} table ${WireGuard_Interface_Rule_table}
+PostUP = ip -6 rule add from ${WireGuard_Interface_Address_IPv6} lookup ${WireGuard_Interface_Rule_table}
+PostDown = ip -6 rule delete from ${WireGuard_Interface_Address_IPv6} lookup ${WireGuard_Interface_Rule_table}
+PostUP = ip -6 rule add fwmark ${WireGuard_Interface_Rule_fwmark} lookup ${WireGuard_Interface_Rule_table}
+PostDown = ip -6 rule delete fwmark ${WireGuard_Interface_Rule_fwmark} lookup ${WireGuard_Interface_Rule_table}
 PostUP = ip -6 rule add table main suppress_prefixlength 0
 PostDown = ip -6 rule delete table main suppress_prefixlength 0
 EOF
@@ -710,25 +715,25 @@ Generate_WireGuardProfile_Interface_Rule_DualStack_nonGlobal() {
 }
 
 Generate_WireGuardProfile_Interface_Rule_IPv4_Global_srcIP() {
-    cat <<EOF >>${WireGuardConfPath}
+    cat <<EOF >>${WireGuard_ConfPath}
 PostUp = ip -4 rule add from ${IPv4_addr} lookup main prio 18
 PostDown = ip -4 rule delete from ${IPv4_addr} lookup main prio 18
 EOF
 }
 
 Generate_WireGuardProfile_Interface_Rule_IPv6_Global_srcIP() {
-    cat <<EOF >>${WireGuardConfPath}
+    cat <<EOF >>${WireGuard_ConfPath}
 PostUp = ip -6 rule add from ${IPv6_addr} lookup main prio 18
 PostDown = ip -6 rule delete from ${IPv6_addr} lookup main prio 18
 EOF
 }
 
 Generate_WireGuardProfile_Peer() {
-    cat <<EOF >>${WireGuardConfPath}
+    cat <<EOF >>${WireGuard_ConfPath}
 [Peer]
-PublicKey = ${WGCF_PublicKey}
-AllowedIPs = ${WGCF_AllowedIPs}
-Endpoint = ${WGCF_Endpoint}
+PublicKey = ${WireGuard_Peer_PublicKey}
+AllowedIPs = ${WireGuard_Peer_AllowedIPs}
+Endpoint = ${WireGuard_Peer_Endpoint}
 EOF
 }
 
@@ -898,17 +903,17 @@ Print_ALL_Status() {
 
 View_WireGuard_Profile() {
     Print_Delimiter
-    cat ${WireGuardConfPath}
+    cat ${WireGuard_ConfPath}
     Print_Delimiter
 }
 
-Check_WGCF_Endpoint() {
-    if ping -c1 -W1 ${WGCF_Endpoint_IP4} >/dev/null 2>&1; then
-        WGCF_Endpoint="${WGCF_Endpoint_IPv4}"
-    elif ping6 -c1 -W1 ${WGCF_Endpoint_IP6} >/dev/null 2>&1; then
-        WGCF_Endpoint="${WGCF_Endpoint_IPv6}"
+Check_WireGuard_Peer_Endpoint() {
+    if ping -c1 -W1 ${WireGuard_Peer_Endpoint_IP4} >/dev/null 2>&1; then
+        WireGuard_Peer_Endpoint="${WireGuard_Peer_Endpoint_IPv4}"
+    elif ping6 -c1 -W1 ${WireGuard_Peer_Endpoint_IP6} >/dev/null 2>&1; then
+        WireGuard_Peer_Endpoint="${WireGuard_Peer_Endpoint_IPv6}"
     else
-        WGCF_Endpoint="${WGCF_Endpoint_Domain}"
+        WireGuard_Peer_Endpoint="${WireGuard_Peer_Endpoint_Domain}"
     fi
 }
 
@@ -917,12 +922,12 @@ Set_WARP_IPv4() {
     Get_IP_addr
     Load_WGCF_Profile
     if [[ ${IPv4Status} = off && ${IPv6Status} = on ]]; then
-        WGCF_DNS="${WGCF_DNS_64}"
+        WireGuard_Interface_DNS="${WireGuard_Interface_DNS_64}"
     else
-        WGCF_DNS="${WGCF_DNS_46}"
+        WireGuard_Interface_DNS="${WireGuard_Interface_DNS_46}"
     fi
-    WGCF_AllowedIPs="${WGCF_AllowedIPs_IPv4}"
-    Check_WGCF_Endpoint
+    WireGuard_Peer_AllowedIPs="${WireGuard_Peer_AllowedIPs_IPv4}"
+    Check_WireGuard_Peer_Endpoint
     Generate_WireGuardProfile_Interface
     if [[ -n ${IPv4_addr} ]]; then
         Generate_WireGuardProfile_Interface_Rule_IPv4_Global_srcIP
@@ -938,12 +943,12 @@ Set_WARP_IPv6() {
     Get_IP_addr
     Load_WGCF_Profile
     if [[ ${IPv4Status} = off && ${IPv6Status} = on ]]; then
-        WGCF_DNS="${WGCF_DNS_64}"
+        WireGuard_Interface_DNS="${WireGuard_Interface_DNS_64}"
     else
-        WGCF_DNS="${WGCF_DNS_46}"
+        WireGuard_Interface_DNS="${WireGuard_Interface_DNS_46}"
     fi
-    WGCF_AllowedIPs="${WGCF_AllowedIPs_IPv6}"
-    Check_WGCF_Endpoint
+    WireGuard_Peer_AllowedIPs="${WireGuard_Peer_AllowedIPs_IPv6}"
+    Check_WireGuard_Peer_Endpoint
     Generate_WireGuardProfile_Interface
     if [[ -n ${IPv6_addr} ]]; then
         Generate_WireGuardProfile_Interface_Rule_IPv6_Global_srcIP
@@ -958,9 +963,9 @@ Set_WARP_DualStack() {
     Install_WireGuard
     Get_IP_addr
     Load_WGCF_Profile
-    WGCF_DNS="${WGCF_DNS_46}"
-    WGCF_AllowedIPs="${WGCF_AllowedIPs_DualStack}"
-    Check_WGCF_Endpoint
+    WireGuard_Interface_DNS="${WireGuard_Interface_DNS_46}"
+    WireGuard_Peer_AllowedIPs="${WireGuard_Peer_AllowedIPs_DualStack}"
+    Check_WireGuard_Peer_Endpoint
     Generate_WireGuardProfile_Interface
     if [[ -n ${IPv4_addr} ]]; then
         Generate_WireGuardProfile_Interface_Rule_IPv4_Global_srcIP
@@ -978,9 +983,9 @@ Set_WARP_DualStack_nonGlobal() {
     Install_WireGuard
     Get_IP_addr
     Load_WGCF_Profile
-    WGCF_DNS="${WGCF_DNS_46}"
-    WGCF_AllowedIPs="${WGCF_AllowedIPs_DualStack}"
-    Check_WGCF_Endpoint
+    WireGuard_Interface_DNS="${WireGuard_Interface_DNS_46}"
+    WireGuard_Peer_AllowedIPs="${WireGuard_Peer_AllowedIPs_DualStack}"
+    Check_WireGuard_Peer_Endpoint
     Generate_WireGuardProfile_Interface
     Generate_WireGuardProfile_Interface_Rule_DualStack_nonGlobal
     Generate_WireGuardProfile_Peer
@@ -993,9 +998,9 @@ Add_WARP_IPv4__Change_WARP_IPv6() {
     Install_WireGuard
     Get_IPv6_addr
     Load_WGCF_Profile
-    WGCF_DNS="${WGCF_DNS_64}"
-    WGCF_AllowedIPs="${WGCF_AllowedIPs_DualStack}"
-    WGCF_Endpoint="${WGCF_Endpoint_IPv6}"
+    WireGuard_Interface_DNS="${WireGuard_Interface_DNS_64}"
+    WireGuard_Peer_AllowedIPs="${WireGuard_Peer_AllowedIPs_DualStack}"
+    WireGuard_Peer_Endpoint="${WireGuard_Peer_Endpoint_IPv6}"
     Generate_WireGuardProfile_Interface
     Generate_WireGuardProfile_Interface_Rule_IPv6_Global_srcIP
     Generate_WireGuardProfile_Peer
@@ -1008,9 +1013,9 @@ Add_WARP_IPv6__Change_WARP_IPv4() {
     Install_WireGuard
     Get_IPv4_addr
     Load_WGCF_Profile
-    WGCF_DNS="${WGCF_DNS_46}"
-    WGCF_AllowedIPs="${WGCF_AllowedIPs_DualStack}"
-    WGCF_Endpoint="${WGCF_Endpoint_IPv4}"
+    WireGuard_Interface_DNS="${WireGuard_Interface_DNS_46}"
+    WireGuard_Peer_AllowedIPs="${WireGuard_Peer_AllowedIPs_DualStack}"
+    WireGuard_Peer_Endpoint="${WireGuard_Peer_Endpoint_IPv4}"
     Generate_WireGuardProfile_Interface
     Generate_WireGuardProfile_Interface_Rule_IPv4_Global_srcIP
     Generate_WireGuardProfile_Peer
@@ -1023,9 +1028,9 @@ Change_WARP_IPv6() {
     Install_WireGuard
     Get_IPv6_addr
     Load_WGCF_Profile
-    WGCF_DNS="${WGCF_DNS_46}"
-    WGCF_AllowedIPs="${WGCF_AllowedIPs_IPv6}"
-    WGCF_Endpoint="${WGCF_Endpoint_IPv6}"
+    WireGuard_Interface_DNS="${WireGuard_Interface_DNS_46}"
+    WireGuard_Peer_AllowedIPs="${WireGuard_Peer_AllowedIPs_IPv6}"
+    WireGuard_Peer_Endpoint="${WireGuard_Peer_Endpoint_IPv6}"
     Generate_WireGuardProfile_Interface
     Generate_WireGuardProfile_Interface_Rule_IPv6_Global_srcIP
     Generate_WireGuardProfile_Peer
@@ -1038,9 +1043,9 @@ Change_WARP_IPv4() {
     Install_WireGuard
     Get_IPv4_addr
     Load_WGCF_Profile
-    WGCF_DNS="${WGCF_DNS_64}"
-    WGCF_AllowedIPs="${WGCF_AllowedIPs_IPv4}"
-    WGCF_Endpoint="${WGCF_Endpoint_IPv4}"
+    WireGuard_Interface_DNS="${WireGuard_Interface_DNS_64}"
+    WireGuard_Peer_AllowedIPs="${WireGuard_Peer_AllowedIPs_IPv4}"
+    WireGuard_Peer_Endpoint="${WireGuard_Peer_Endpoint_IPv4}"
     Generate_WireGuardProfile_Interface
     Generate_WireGuardProfile_Interface_Rule_IPv4_Global_srcIP
     Generate_WireGuardProfile_Peer
@@ -1054,9 +1059,9 @@ Change_WARP_DualStack_IPv4Out() {
     Get_IPv4_addr
     Get_IPv6_addr
     Load_WGCF_Profile
-    WGCF_DNS="${WGCF_DNS_46}"
-    WGCF_AllowedIPs="${WGCF_AllowedIPs_DualStack}"
-    WGCF_Endpoint="${WGCF_Endpoint_IPv4}"
+    WireGuard_Interface_DNS="${WireGuard_Interface_DNS_46}"
+    WireGuard_Peer_AllowedIPs="${WireGuard_Peer_AllowedIPs_DualStack}"
+    WireGuard_Peer_Endpoint="${WireGuard_Peer_Endpoint_IPv4}"
     Generate_WireGuardProfile_Interface
     Generate_WireGuardProfile_Interface_Rule_IPv4_Global_srcIP
     Generate_WireGuardProfile_Interface_Rule_IPv6_Global_srcIP
@@ -1071,9 +1076,9 @@ Change_WARP_DualStack_IPv6Out() {
     Get_IPv4_addr
     Get_IPv6_addr
     Load_WGCF_Profile
-    WGCF_DNS="${WGCF_DNS_46}"
-    WGCF_AllowedIPs="${WGCF_AllowedIPs_DualStack}"
-    WGCF_Endpoint="${WGCF_Endpoint_IPv6}"
+    WireGuard_Interface_DNS="${WireGuard_Interface_DNS_46}"
+    WireGuard_Peer_AllowedIPs="${WireGuard_Peer_AllowedIPs_DualStack}"
+    WireGuard_Peer_Endpoint="${WireGuard_Peer_Endpoint_IPv6}"
     Generate_WireGuardProfile_Interface
     Generate_WireGuardProfile_Interface_Rule_IPv4_Global_srcIP
     Generate_WireGuardProfile_Interface_Rule_IPv6_Global_srcIP
