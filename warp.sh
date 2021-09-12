@@ -3,7 +3,7 @@
 # https://github.com/P3TERX/warp.sh
 # Description: Cloudflare WARP configuration script
 # System Required: Debian, Ubuntu, CentOS
-# Version: beta23
+# Version: beta24
 #
 # MIT License
 #
@@ -28,7 +28,7 @@
 # SOFTWARE.
 #
 
-shVersion='beta23'
+shVersion='beta24'
 
 FontColor_Red="\033[31m"
 FontColor_Red_Bold="\033[1;31m"
@@ -100,9 +100,9 @@ WireGuard_Peer_AllowedIPs_IPv4='0.0.0.0/0'
 WireGuard_Peer_AllowedIPs_IPv6='::/0'
 WireGuard_Peer_AllowedIPs_DualStack='0.0.0.0/0,::/0'
 
-TestIPv4_1='8.8.8.8'
+TestIPv4_1='1.0.0.1'
 TestIPv4_2='9.9.9.9'
-TestIPv6_1='2001:4860:4860::8888'
+TestIPv6_1='2606:4700:4700::1001'
 TestIPv6_2='2620:fe::fe'
 CF_Trace_URL='https://www.cloudflare.com/cdn-cgi/trace'
 
