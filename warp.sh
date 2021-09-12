@@ -3,7 +3,7 @@
 # https://github.com/P3TERX/warp.sh
 # Description: Cloudflare WARP configuration script
 # System Required: Debian, Ubuntu, CentOS
-# Version: beta22
+# Version: beta23
 #
 # MIT License
 #
@@ -28,7 +28,7 @@
 # SOFTWARE.
 #
 
-shVersion='beta22'
+shVersion='beta23'
 
 FontColor_Red="\033[31m"
 FontColor_Red_Bold="\033[1;31m"
@@ -685,7 +685,41 @@ Input_IPv6_addr() {
     fi
 }
 
+Get_WireGuard_Interface_MTU() {
+    log INFO "Getting the best MTU value for WireGuard..."
+    MTU_Preset=1500
+    MTU_Increment=10
+    if [[ ${IPv4Status} = off && ${IPv6Status} = on ]]; then
+        CMD_ping='ping6'
+        MTU_TestIP_1="${TestIPv6_1}"
+        MTU_TestIP_2="${TestIPv6_2}"
+    else
+        CMD_ping='ping'
+        MTU_TestIP_1="${TestIPv4_1}"
+        MTU_TestIP_2="${TestIPv4_2}"
+    fi
+    while true; do
+        if ${CMD_ping} -c1 -W1 -s$((${MTU_Preset} - 28)) -Mdo ${MTU_TestIP_1} >/dev/null 2>&1 || ${CMD_ping} -c1 -W1 -s$((${MTU_Preset} - 28)) -Mdo ${MTU_TestIP_2} >/dev/null 2>&1; then
+            MTU_Increment=1
+            MTU_Preset=$((${MTU_Preset} + ${MTU_Increment}))
+        else
+            MTU_Preset=$((${MTU_Preset} - ${MTU_Increment}))
+            if [[ ${MTU_Increment} = 1 ]]; then
+                break
+            fi
+        fi
+        if [[ ${MTU_Preset} -le 1360 ]]; then
+            log WARN "MTU is set to the lowest value."
+            MTU_Preset='1360'
+            break
+        fi
+    done
+    WireGuard_Interface_MTU=$((${MTU_Preset} - 80))
+    log INFO "WireGuard MTU: ${WireGuard_Interface_MTU}"
+}
+
 Generate_WireGuardProfile_Interface() {
+    Get_WireGuard_Interface_MTU
     log INFO "WireGuard profile (${WireGuard_ConfPath}) generation in progress..."
     cat <<EOF >${WireGuard_ConfPath}
 [Interface]
