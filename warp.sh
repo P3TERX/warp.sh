@@ -3,7 +3,7 @@
 # https://github.com/P3TERX/warp.sh
 # Description: Cloudflare WARP configuration script
 # System Required: Debian, Ubuntu, CentOS
-# Version: beta20
+# Version: beta21
 #
 # MIT License
 #
@@ -28,7 +28,7 @@
 # SOFTWARE.
 #
 
-shVersion='beta20'
+shVersion='beta21'
 
 FontColor_Red="\033[31m"
 FontColor_Red_Bold="\033[1;31m"
@@ -108,23 +108,27 @@ CF_Trace_URL='https://www.cloudflare.com/cdn-cgi/trace'
 
 Get_System_Info() {
     source /etc/os-release
-    VERSION_MAJOR="$(echo ${VERSION_ID} | cut -d. -f1)"
-    VIRT="$(systemd-detect-virt)"
-    KERNEL="$(uname -r)"
-    KernelVer_major="$(uname -r | awk -F . '{print $1}')"
-    KernelVer_minor="$(uname -r | awk -F . '{print $2}')"
-    ARCH="$(uname -m)"
+    SysInfo_OS_Ver_major="$(echo ${VERSION_ID} | cut -d. -f1)"
+    SysInfo_OS_CodeName="${VERSION_CODENAME}"
+    SysInfo_OS_Name_lowercase="${ID}"
+    SysInfo_OS_Name_Full="${PRETTY_NAME}"
+    SysInfo_RelatedOS="${ID_LIKE}"
+    SysInfo_Kernel="$(uname -r)"
+    SysInfo_Kernel_Ver_major="$(uname -r | awk -F . '{print $1}')"
+    SysInfo_Kernel_Ver_minor="$(uname -r | awk -F . '{print $2}')"
+    SysInfo_Arch="$(uname -m)"
+    SysInfo_Virt="$(systemd-detect-virt)"
 }
 
 Print_System_Info() {
     echo -e "
 System Information
-----------------------------------------------------
- Operating System: ${PRETTY_NAME}
-     Linux Kernel: ${KERNEL}
-     Architecture: ${ARCH}
-   Virtualization: ${VIRT}
-----------------------------------------------------
+---------------------------------------------------
+  Operating System: ${SysInfo_OS_Name_Full}
+      Linux Kernel: ${SysInfo_Kernel}
+      Architecture: ${SysInfo_Arch}
+    Virtualization: ${SysInfo_Virt}
+---------------------------------------------------
 "
 }
 
@@ -142,12 +146,12 @@ Install_Requirements_Debian() {
 Instal_WARP_Client_Debian() {
     Install_Requirements_Debian
     curl https://pkg.cloudflareclient.com/pubkey.gpg | apt-key add -
-    if [[ ${ID} = ubuntu ]]; then
+    if [[ ${SysInfo_OS_Name_lowercase} = ubuntu ]]; then
         OS_CodeName='focal'
-    elif [[ ${ID_LIKE} = *debian* ]]; then
+    elif [[ ${SysInfo_RelatedOS} = *debian* ]]; then
         OS_CodeName='buster'
     else
-        OS_CodeName="${VERSION_CODENAME}"
+        OS_CodeName="${SysInfo_OS_CodeName}"
     fi
     echo "deb http://pkg.cloudflareclient.com/ ${OS_CodeName} main" | tee /etc/apt/sources.list.d/cloudflare-client.list
     apt update
@@ -155,8 +159,8 @@ Instal_WARP_Client_Debian() {
 }
 
 Instal_WARP_Client_CentOS() {
-    if [[ ${VERSION_MAJOR} = 8 ]]; then
-        rpm -ivh http://pkg.cloudflareclient.com/cloudflare-release-el${VERSION_MAJOR}.rpm
+    if [[ ${SysInfo_OS_Ver_major} = 8 ]]; then
+        rpm -ivh http://pkg.cloudflareclient.com/cloudflare-release-el8.rpm
         yum install cloudflare-warp -y
     else
         log ERROR "This operating system is not supported."
@@ -172,11 +176,11 @@ Check_WARP_Client() {
 Instal_WARP_Client() {
     Print_System_Info
     log INFO "Installing Cloudflare WARP Client..."
-    if [[ ${ARCH} != x86_64 ]]; then
-        log ERROR "This CPU architecture is not supported: ${ARCH}"
+    if [[ ${SysInfo_Arch} != x86_64 ]]; then
+        log ERROR "This CPU architecture is not supported: ${SysInfo_Arch}"
         exit 1
     fi
-    case ${ID} in
+    case ${SysInfo_OS_Name_lowercase} in
     *debian* | *ubuntu*)
         Instal_WARP_Client_Debian
         ;;
@@ -184,9 +188,9 @@ Instal_WARP_Client() {
         Instal_WARP_Client_CentOS
         ;;
     *)
-        if [[ ${ID_LIKE} = *debian* ]]; then
+        if [[ ${SysInfo_RelatedOS} = *debian* ]]; then
             Instal_WARP_Client_Debian
-        elif [[ ${ID_LIKE} = *rhel* ]]; then
+        elif [[ ${SysInfo_RelatedOS} = *rhel* ]]; then
             Instal_WARP_Client_CentOS
         else
             log ERROR "This operating system is not supported."
@@ -206,7 +210,7 @@ Instal_WARP_Client() {
 
 Uninstall_WARP_Client() {
     log INFO "Uninstalling Cloudflare WARP Client..."
-    case ${ID} in
+    case ${SysInfo_OS_Name_lowercase} in
     *debian* | *ubuntu*)
         apt purge cloudflare-warp -y
         ;;
@@ -214,7 +218,7 @@ Uninstall_WARP_Client() {
         yum remove cloudflare-warp -y
         ;;
     *)
-        if [[ ${ID_LIKE} = *rhel* ]]; then
+        if [[ ${SysInfo_RelatedOS} = *rhel* ]]; then
             yum remove cloudflare-warp -y
         else
             log ERROR "This operating system is not supported."
@@ -336,7 +340,7 @@ Load_WGCF_Profile() {
 }
 
 Install_WireGuardTools_Debian() {
-    case ${VERSION_MAJOR} in
+    case ${SysInfo_OS_Ver_major} in
     10)
         if [[ -z $(grep "^deb.*buster-backports.*main" /etc/apt/sources.list{,.d/*}) ]]; then
             echo "deb http://deb.debian.org/debian buster-backports main" | tee /etc/apt/sources.list.d/backports.list
@@ -349,7 +353,7 @@ Install_WireGuardTools_Debian() {
         fi
         ;;
     *)
-        if [[ ${VERSION_MAJOR} -lt 9 ]]; then
+        if [[ ${SysInfo_OS_Ver_major} -lt 9 ]]; then
             log ERROR "This operating system is not supported."
             exit 1
         fi
@@ -382,7 +386,7 @@ Install_WireGuardTools_Arch() {
 
 Install_WireGuardTools() {
     log INFO "Installing wireguard-tools..."
-    case ${ID} in
+    case ${SysInfo_OS_Name_lowercase} in
     *debian*)
         Install_WireGuardTools_Debian
         ;;
@@ -399,7 +403,7 @@ Install_WireGuardTools() {
         Install_WireGuardTools_Arch
         ;;
     *)
-        if [[ ${ID_LIKE} = *rhel* ]]; then
+        if [[ ${SysInfo_RelatedOS} = *rhel* ]]; then
             Install_WireGuardTools_CentOS
         else
             log ERROR "This operating system is not supported."
@@ -410,12 +414,12 @@ Install_WireGuardTools() {
 }
 
 Install_WireGuardGo() {
-    case ${VIRT} in
+    case ${SysInfo_Virt} in
     openvz | lxc*)
         curl -fsSL git.io/wireguard-go.sh | bash
         ;;
     *)
-        if [[ ${KernelVer_major} -lt 5 || ${KernelVer_minor} -lt 6 ]]; then
+        if [[ ${SysInfo_Kernel_Ver_major} -lt 5 || ${SysInfo_Kernel_Ver_minor} -lt 6 ]]; then
             curl -fsSL git.io/wireguard-go.sh | bash
         fi
         ;;
