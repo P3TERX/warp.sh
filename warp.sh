@@ -3,7 +3,7 @@
 # https://github.com/P3TERX/warp.sh
 # Description: Cloudflare WARP configuration script
 # System Required: Debian, Ubuntu, CentOS
-# Version: beta25
+# Version: beta26
 #
 # MIT License
 #
@@ -28,7 +28,7 @@
 # SOFTWARE.
 #
 
-shVersion='beta25'
+shVersion='beta26'
 
 FontColor_Red="\033[31m"
 FontColor_Red_Bold="\033[1;31m"
@@ -144,17 +144,12 @@ Install_Requirements_Debian() {
 }
 
 Install_WARP_Client_Debian() {
-    Install_Requirements_Debian
-    curl https://pkg.cloudflareclient.com/pubkey.gpg | apt-key add -
     if [[ ${SysInfo_OS_Name_lowercase} = ubuntu ]]; then
         OS_CodeName='focal'
     elif [[ ${SysInfo_OS_Name_lowercase} = debian ]]; then
         case ${SysInfo_OS_Ver_major} in
         10 | 11)
             OS_CodeName='buster'
-            ;;
-        9)
-            OS_CodeName='stretch'
             ;;
         *)
             log ERROR "This operating system is not supported."
@@ -166,6 +161,8 @@ Install_WARP_Client_Debian() {
     else
         OS_CodeName="${SysInfo_OS_CodeName}"
     fi
+    Install_Requirements_Debian
+    curl https://pkg.cloudflareclient.com/pubkey.gpg | apt-key add -
     echo "deb http://pkg.cloudflareclient.com/ ${OS_CodeName} main" | tee /etc/apt/sources.list.d/cloudflare-client.list
     apt update
     apt install cloudflare-warp -y
