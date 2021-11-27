@@ -3,7 +3,7 @@
 # https://github.com/P3TERX/warp.sh
 # Description: Cloudflare WARP configuration script
 # System Required: Debian, Ubuntu, CentOS
-# Version: beta26
+# Version: beta27
 #
 # MIT License
 #
@@ -28,7 +28,7 @@
 # SOFTWARE.
 #
 
-shVersion='beta26'
+shVersion='beta27'
 
 FontColor_Red="\033[31m"
 FontColor_Red_Bold="\033[1;31m"
@@ -257,30 +257,29 @@ Init_WARP_Client() {
     if [[ ${WARP_Client_SelfStart} != enabled || ${WARP_Client_Status} != active ]]; then
         Install_WARP_Client
     fi
-    yes | warp-cli
-    if [[ $(warp-cli account) = *Missing* ]]; then
+    if [[ $(warp-cli --accept-tos account) = *Missing* ]]; then
         log INFO "Cloudflare WARP Account Registration in progress..."
-        warp-cli register
+        warp-cli --accept-tos register
     fi
 }
 
 Connect_WARP() {
     log INFO "Connecting to WARP..."
-    warp-cli connect
+    warp-cli --accept-tos connect
     log INFO "Enable WARP Always-On..."
-    warp-cli enable-always-on
+    warp-cli --accept-tos enable-always-on
 }
 
 Disconnect_WARP() {
     log INFO "Disable WARP Always-On..."
-    warp-cli disable-always-on
+    warp-cli --accept-tos disable-always-on
     log INFO "Disconnect from WARP..."
-    warp-cli disconnect
+    warp-cli --accept-tos disconnect
 }
 
 Set_WARP_Mode_Proxy() {
     log INFO "Setting up WARP Proxy Mode..."
-    warp-cli set-mode proxy
+    warp-cli --accept-tos set-mode proxy
 }
 
 Enable_WARP_Client_Proxy() {
