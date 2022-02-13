@@ -3,7 +3,7 @@
 # https://github.com/P3TERX/warp.sh
 # Description: Cloudflare WARP configuration script
 # System Required: Debian, Ubuntu, CentOS
-# Version: beta27
+# Version: beta28
 #
 # MIT License
 #
@@ -28,7 +28,7 @@
 # SOFTWARE.
 #
 
-shVersion='beta27'
+shVersion='beta28'
 
 FontColor_Red="\033[31m"
 FontColor_Red_Bold="\033[1;31m"
@@ -108,7 +108,6 @@ CF_Trace_URL='https://www.cloudflare.com/cdn-cgi/trace'
 
 Get_System_Info() {
     source /etc/os-release
-    SysInfo_OS_Ver_major="$(echo ${VERSION_ID} | cut -d. -f1)"
     SysInfo_OS_CodeName="${VERSION_CODENAME}"
     SysInfo_OS_Name_lowercase="${ID}"
     SysInfo_OS_Name_Full="${PRETTY_NAME}"
@@ -118,6 +117,14 @@ Get_System_Info() {
     SysInfo_Kernel_Ver_minor="$(uname -r | awk -F . '{print $2}')"
     SysInfo_Arch="$(uname -m)"
     SysInfo_Virt="$(systemd-detect-virt)"
+    case ${SysInfo_RelatedOS} in
+    *fedora* | *rhel*)
+        SysInfo_OS_Ver_major="$(rpm -E '%{rhel}')"
+        ;;
+    *)
+        SysInfo_OS_Ver_major="$(echo ${VERSION_ID} | cut -d. -f1)"
+        ;;
+    esac
 }
 
 Print_System_Info() {
@@ -200,7 +207,7 @@ Install_WARP_Client() {
     *)
         if [[ ${SysInfo_RelatedOS} = *debian* ]]; then
             Install_WARP_Client_Debian
-        elif [[ ${SysInfo_RelatedOS} = *rhel* ]]; then
+        elif [[ ${SysInfo_RelatedOS} = *rhel* || ${SysInfo_RelatedOS} = *fedora* ]]; then
             Install_WARP_Client_CentOS
         else
             log ERROR "This operating system is not supported."
@@ -229,7 +236,7 @@ Uninstall_WARP_Client() {
         yum remove cloudflare-warp -y
         ;;
     *)
-        if [[ ${SysInfo_RelatedOS} = *rhel* ]]; then
+        if [[ ${SysInfo_RelatedOS} = *rhel* || ${SysInfo_RelatedOS} = *fedora* ]]; then
             yum remove cloudflare-warp -y
         else
             log ERROR "This operating system is not supported."
@@ -382,8 +389,8 @@ Install_WireGuardTools_Ubuntu() {
 }
 
 Install_WireGuardTools_CentOS() {
-    yum install epel-release -y
-    yum install iproute wireguard-tools -y
+    yum install epel-release -y || yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-${SysInfo_OS_Ver_major}.noarch.rpm -y
+    yum install iproute iptables wireguard-tools -y
 }
 
 Install_WireGuardTools_Fedora() {
@@ -414,7 +421,7 @@ Install_WireGuardTools() {
         Install_WireGuardTools_Arch
         ;;
     *)
-        if [[ ${SysInfo_RelatedOS} = *rhel* ]]; then
+        if [[ ${SysInfo_RelatedOS} = *rhel* || ${SysInfo_RelatedOS} = *fedora* ]]; then
             Install_WireGuardTools_CentOS
         else
             log ERROR "This operating system is not supported."
