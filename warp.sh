@@ -3,7 +3,7 @@
 # https://github.com/P3TERX/warp.sh
 # Description: Cloudflare WARP configuration script
 # System Required: Debian, Ubuntu, CentOS
-# Version: beta29
+# Version: beta30
 #
 # MIT License
 #
@@ -28,7 +28,7 @@
 # SOFTWARE.
 #
 
-shVersion='beta29'
+shVersion='beta30'
 
 FontColor_Red="\033[31m"
 FontColor_Red_Bold="\033[1;31m"
@@ -367,14 +367,8 @@ Install_WireGuardTools_Debian() {
             echo "deb http://deb.debian.org/debian buster-backports main" | tee /etc/apt/sources.list.d/backports.list
         fi
         ;;
-    9)
-        if [[ -z $(grep "^deb.*unstable.*main" /etc/apt/sources.list{,.d/*}) ]]; then
-            echo "deb http://deb.debian.org/debian/ unstable main" | tee /etc/apt/sources.list.d/unstable.list
-            echo -e "Package: *\nPin: release a=unstable\nPin-Priority: 150\n" | tee /etc/apt/preferences.d/limit-unstable
-        fi
-        ;;
     *)
-        if [[ ${SysInfo_OS_Ver_major} -lt 9 ]]; then
+        if [[ ${SysInfo_OS_Ver_major} -lt 10 ]]; then
             log ERROR "This operating system is not supported."
             exit 1
         fi
