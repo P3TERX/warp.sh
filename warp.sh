@@ -3,7 +3,7 @@
 # https://github.com/P3TERX/warp.sh
 # Description: Cloudflare WARP configuration script
 # System Required: Debian, Ubuntu, CentOS
-# Version: beta28
+# Version: beta29
 #
 # MIT License
 #
@@ -28,7 +28,7 @@
 # SOFTWARE.
 #
 
-shVersion='beta28'
+shVersion='beta29'
 
 FontColor_Red="\033[31m"
 FontColor_Red_Bold="\033[1;31m"
@@ -155,7 +155,10 @@ Install_WARP_Client_Debian() {
         OS_CodeName='focal'
     elif [[ ${SysInfo_OS_Name_lowercase} = debian ]]; then
         case ${SysInfo_OS_Ver_major} in
-        10 | 11)
+        11)
+            OS_CodeName='bullseye'
+            ;;
+        10)
             OS_CodeName='buster'
             ;;
         *)
@@ -169,8 +172,8 @@ Install_WARP_Client_Debian() {
         OS_CodeName="${SysInfo_OS_CodeName}"
     fi
     Install_Requirements_Debian
-    curl https://pkg.cloudflareclient.com/pubkey.gpg | apt-key add -
-    echo "deb http://pkg.cloudflareclient.com/ ${OS_CodeName} main" | tee /etc/apt/sources.list.d/cloudflare-client.list
+    curl https://pkg.cloudflareclient.com/pubkey.gpg | gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ ${OS_CodeName} main" | tee /etc/apt/sources.list.d/cloudflare-client.list
     apt update
     apt install cloudflare-warp -y
 }
@@ -230,7 +233,7 @@ Uninstall_WARP_Client() {
     case ${SysInfo_OS_Name_lowercase} in
     *debian* | *ubuntu*)
         apt purge cloudflare-warp -y
-        rm -f /etc/apt/sources.list.d/cloudflare-client.list
+        rm -f /etc/apt/sources.list.d/cloudflare-client.list /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
         ;;
     *centos* | *rhel*)
         yum remove cloudflare-warp -y
@@ -921,6 +924,7 @@ Check_ALL_Status() {
 
 Print_WARP_Client_Status() {
     log INFO "Status check in progress..."
+    sleep 3
     Check_WARP_Client_Status
     Check_WARP_Proxy_Status
     echo -e "
