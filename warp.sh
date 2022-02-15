@@ -3,7 +3,7 @@
 # https://github.com/P3TERX/warp.sh
 # Description: Cloudflare WARP configuration script
 # System Required: Debian, Ubuntu, CentOS
-# Version: beta30
+# Version: beta31
 #
 # MIT License
 #
@@ -28,7 +28,7 @@
 # SOFTWARE.
 #
 
-shVersion='beta30'
+shVersion='beta31'
 
 FontColor_Red="\033[31m"
 FontColor_Red_Bold="\033[1;31m"
@@ -1344,7 +1344,7 @@ ${Menu_Title}
 
 Print_Usage() {
     echo -e "
-Cloudflare WARP configuration script
+Cloudflare WARP configuration script [${shVersion}] By P3TERX.COM
 
 USAGE:
     bash <(curl -fsSL git.io/warp.sh) [SUBCOMMAND]
@@ -1355,12 +1355,13 @@ SUBCOMMANDS:
     restart         Restart Cloudflare WARP Official Linux Client
     proxy           Enable WARP Client Proxy Mode (default SOCKS5 port: 40000)
     unproxy         Disable WARP Client Proxy Mode
-    wg              Configuration WARP Non-Global Network (with WireGuard), set fwmark or interface IP Address to use the WARP network
+    wg              Install WireGuard and related components
     wg4             Configuration WARP IPv4 Global Network (with WireGuard), all IPv4 outbound data over the WARP network
     wg6             Configuration WARP IPv6 Global Network (with WireGuard), all IPv6 outbound data over the WARP network
     wgd             Configuration WARP Dual Stack Global Network (with WireGuard), all outbound data over the WARP network
-    rewg            Restart WARP WireGuard service
-    unwg            Disable WARP WireGuard service
+    wgx             Configuration WARP Non-Global Network (with WireGuard), set fwmark or interface IP Address to use the WARP network
+    rwg             Restart WARP WireGuard service
+    dwg             Disable WARP WireGuard service
     status          Prints status information
     version         Prints version information
     help            Prints this message or the help of the given subcommand(s)
@@ -1387,7 +1388,7 @@ if [ $# -ge 1 ]; then
         Disconnect_WARP
         ;;
     wg)
-        Set_WARP_DualStack_nonGlobal
+        Install_WireGuard
         ;;
     wg4 | 4)
         Set_WARP_IPv4
@@ -1398,10 +1399,13 @@ if [ $# -ge 1 ]; then
     wgd | d)
         Set_WARP_DualStack
         ;;
-    rewg)
+    wgx | x)
+        Set_WARP_DualStack_nonGlobal
+        ;;
+    rwg)
         Restart_WireGuard
         ;;
-    unwg)
+    dwg)
         Disable_WireGuard
         ;;
     status)
