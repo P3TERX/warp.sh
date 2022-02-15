@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
 # https://github.com/P3TERX/warp.sh
-# Description: Cloudflare WARP configuration script
-# System Required: Debian, Ubuntu, CentOS
-# Version: beta31
+# Description: Cloudflare WARP Installer
+# System Required: Debian, Ubuntu, Fedora, CentOS, Oracle Linux, Arch Linux
+# Version: beta32
 #
 # MIT License
 #
@@ -28,7 +28,7 @@
 # SOFTWARE.
 #
 
-shVersion='beta31'
+shVersion='beta32'
 
 FontColor_Red="\033[31m"
 FontColor_Red_Bold="\033[1;31m"
@@ -1146,7 +1146,7 @@ Change_WARP_DualStack_IPv6Out() {
     Print_WARP_WireGuard_Status
 }
 
-Menu_Title="${FontColor_Yellow_Bold}Cloudflare WARP 一键配置脚本${FontColor_Suffix} ${FontColor_Red}[${shVersion}]${FontColor_Suffix} by ${FontColor_Purple_Bold}P3TERX.COM${FontColor_Suffix}"
+Menu_Title="${FontColor_Yellow_Bold}Cloudflare WARP 一键安装脚本${FontColor_Suffix} ${FontColor_Red}[${shVersion}]${FontColor_Suffix} by ${FontColor_Purple_Bold}P3TERX.COM${FontColor_Suffix}"
 
 Menu_WARP_Client() {
     clear
@@ -1344,7 +1344,7 @@ ${Menu_Title}
 
 Print_Usage() {
     echo -e "
-Cloudflare WARP configuration script [${shVersion}] By P3TERX.COM
+Cloudflare WARP Installer [${shVersion}] By P3TERX.COM
 
 USAGE:
     bash <(curl -fsSL git.io/warp.sh) [SUBCOMMAND]
