@@ -3,7 +3,7 @@
 # https://github.com/P3TERX/warp.sh
 # Description: Cloudflare WARP Installer
 # System Required: Debian, Ubuntu, Fedora, CentOS, Oracle Linux, Arch Linux
-# Version: beta32
+# Version: beta33
 #
 # MIT License
 #
@@ -28,7 +28,7 @@
 # SOFTWARE.
 #
 
-shVersion='beta32'
+shVersion='beta33'
 
 FontColor_Red="\033[31m"
 FontColor_Red_Bold="\033[1;31m"
@@ -391,8 +391,7 @@ Install_WireGuardTools_CentOS() {
 }
 
 Install_WireGuardTools_Fedora() {
-    dnf install iproute openresolv wireguard-tools -y
-    chmod +x /usr/sbin/resolvconf.openresolv
+    dnf install iproute iptables wireguard-tools -y
 }
 
 Install_WireGuardTools_Arch() {
