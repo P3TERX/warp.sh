@@ -3,7 +3,7 @@
 # https://github.com/P3TERX/warp.sh
 # Description: Cloudflare WARP Installer
 # System Required: Debian, Ubuntu, Fedora, CentOS, Oracle Linux, Arch Linux
-# Version: beta33
+# Version: beta34
 #
 # MIT License
 #
@@ -28,7 +28,7 @@
 # SOFTWARE.
 #
 
-shVersion='beta33'
+shVersion='beta34'
 
 FontColor_Red="\033[31m"
 FontColor_Red_Bold="\033[1;31m"
@@ -619,72 +619,6 @@ Get_IP_addr() {
     fi
 }
 
-Get_IPv4_addr() {
-    log INFO "正在检测 IPv4 地址..."
-    Check_IPv4_addr
-    if [[ -z ${IPv4_addr} ]]; then
-        log ERROR "IPv4 地址自动检测失败！"
-        Input_IPv4_addr
-    else
-        log INFO "检测到 IPv4 地址：${FontColor_Purple}${IPv4_addr}${FontColor_Suffix}"
-        unset answer_YN
-        read -p "是否需要修改？[y/N] " answer_YN
-        case ${answer_YN:-n} in
-        Y | y)
-            Input_IPv4_addr
-            ;;
-        N | n)
-            echo
-            ;;
-        *)
-            log ERROR "无效输入！"
-            Get_IPv4_addr
-            ;;
-        esac
-    fi
-}
-
-Get_IPv6_addr() {
-    log INFO "正在检测 IPv6 地址..."
-    Check_IPv6_addr
-    if [[ -z ${IPv6_addr} ]]; then
-        log ERROR "IPv6 地址自动检测失败！"
-        Input_IPv6_addr
-    else
-        log INFO "检测到 IPv6 地址：${FontColor_Purple}${IPv6_addr}${FontColor_Suffix}"
-        unset answer_YN
-        read -p "是否需要修改？[y/N] " answer_YN
-        case ${answer_YN:-n} in
-        Y | y)
-            Input_IPv6_addr
-            ;;
-        N | n)
-            echo
-            ;;
-        *)
-            log ERROR "无效输入！"
-            Get_IPv6_addr
-            ;;
-        esac
-    fi
-}
-
-Input_IPv4_addr() {
-    read -p "请输入 IPv4 地址：" IPv4_addr
-    if [[ -z ${IPv4_addr} ]]; then
-        log ERROR "无效输入！"
-        Get_IPv4_addr
-    fi
-}
-
-Input_IPv6_addr() {
-    read -p "请输入 IPv6 地址：" IPv6_addr
-    if [[ -z ${IPv6_addr} ]]; then
-        log ERROR "无效输入！"
-        Get_IPv6_addr
-    fi
-}
-
 Get_WireGuard_Interface_MTU() {
     log INFO "Getting the best MTU value for WireGuard..."
     MTU_Preset=1500
@@ -1051,100 +985,6 @@ Set_WARP_DualStack_nonGlobal() {
     Print_WARP_WireGuard_Status
 }
 
-Add_WARP_IPv4__Change_WARP_IPv6() {
-    Install_WireGuard
-    Get_IPv6_addr
-    Load_WGCF_Profile
-    WireGuard_Interface_DNS="${WireGuard_Interface_DNS_64}"
-    WireGuard_Peer_AllowedIPs="${WireGuard_Peer_AllowedIPs_DualStack}"
-    WireGuard_Peer_Endpoint="${WireGuard_Peer_Endpoint_IPv6}"
-    Generate_WireGuardProfile_Interface
-    Generate_WireGuardProfile_Interface_Rule_IPv6_Global_srcIP
-    Generate_WireGuardProfile_Peer
-    View_WireGuard_Profile
-    Enable_WireGuard
-    Print_WARP_WireGuard_Status
-}
-
-Add_WARP_IPv6__Change_WARP_IPv4() {
-    Install_WireGuard
-    Get_IPv4_addr
-    Load_WGCF_Profile
-    WireGuard_Interface_DNS="${WireGuard_Interface_DNS_46}"
-    WireGuard_Peer_AllowedIPs="${WireGuard_Peer_AllowedIPs_DualStack}"
-    WireGuard_Peer_Endpoint="${WireGuard_Peer_Endpoint_IPv4}"
-    Generate_WireGuardProfile_Interface
-    Generate_WireGuardProfile_Interface_Rule_IPv4_Global_srcIP
-    Generate_WireGuardProfile_Peer
-    View_WireGuard_Profile
-    Enable_WireGuard
-    Print_WARP_WireGuard_Status
-}
-
-Change_WARP_IPv6() {
-    Install_WireGuard
-    Get_IPv6_addr
-    Load_WGCF_Profile
-    WireGuard_Interface_DNS="${WireGuard_Interface_DNS_46}"
-    WireGuard_Peer_AllowedIPs="${WireGuard_Peer_AllowedIPs_IPv6}"
-    WireGuard_Peer_Endpoint="${WireGuard_Peer_Endpoint_IPv6}"
-    Generate_WireGuardProfile_Interface
-    Generate_WireGuardProfile_Interface_Rule_IPv6_Global_srcIP
-    Generate_WireGuardProfile_Peer
-    View_WireGuard_Profile
-    Enable_WireGuard
-    Print_WARP_WireGuard_Status
-}
-
-Change_WARP_IPv4() {
-    Install_WireGuard
-    Get_IPv4_addr
-    Load_WGCF_Profile
-    WireGuard_Interface_DNS="${WireGuard_Interface_DNS_64}"
-    WireGuard_Peer_AllowedIPs="${WireGuard_Peer_AllowedIPs_IPv4}"
-    WireGuard_Peer_Endpoint="${WireGuard_Peer_Endpoint_IPv4}"
-    Generate_WireGuardProfile_Interface
-    Generate_WireGuardProfile_Interface_Rule_IPv4_Global_srcIP
-    Generate_WireGuardProfile_Peer
-    View_WireGuard_Profile
-    Enable_WireGuard
-    Print_WARP_WireGuard_Status
-}
-
-Change_WARP_DualStack_IPv4Out() {
-    Install_WireGuard
-    Get_IPv4_addr
-    Get_IPv6_addr
-    Load_WGCF_Profile
-    WireGuard_Interface_DNS="${WireGuard_Interface_DNS_46}"
-    WireGuard_Peer_AllowedIPs="${WireGuard_Peer_AllowedIPs_DualStack}"
-    WireGuard_Peer_Endpoint="${WireGuard_Peer_Endpoint_IPv4}"
-    Generate_WireGuardProfile_Interface
-    Generate_WireGuardProfile_Interface_Rule_IPv4_Global_srcIP
-    Generate_WireGuardProfile_Interface_Rule_IPv6_Global_srcIP
-    Generate_WireGuardProfile_Peer
-    View_WireGuard_Profile
-    Enable_WireGuard
-    Print_WARP_WireGuard_Status
-}
-
-Change_WARP_DualStack_IPv6Out() {
-    Install_WireGuard
-    Get_IPv4_addr
-    Get_IPv6_addr
-    Load_WGCF_Profile
-    WireGuard_Interface_DNS="${WireGuard_Interface_DNS_46}"
-    WireGuard_Peer_AllowedIPs="${WireGuard_Peer_AllowedIPs_DualStack}"
-    WireGuard_Peer_Endpoint="${WireGuard_Peer_Endpoint_IPv6}"
-    Generate_WireGuardProfile_Interface
-    Generate_WireGuardProfile_Interface_Rule_IPv4_Global_srcIP
-    Generate_WireGuardProfile_Interface_Rule_IPv6_Global_srcIP
-    Generate_WireGuardProfile_Peer
-    View_WireGuard_Profile
-    Enable_WireGuard
-    Print_WARP_WireGuard_Status
-}
-
 Menu_Title="${FontColor_Yellow_Bold}Cloudflare WARP 一键安装脚本${FontColor_Suffix} ${FontColor_Red}[${shVersion}]${FontColor_Suffix} by ${FontColor_Purple_Bold}P3TERX.COM${FontColor_Suffix}"
 
 Menu_WARP_Client() {
@@ -1189,53 +1029,6 @@ ${Menu_Title}
         log ERROR "无效输入！"
         sleep 2s
         Menu_WARP_Client
-        ;;
-    esac
-}
-
-Menu_WARP_WireGuard_Other() {
-    clear
-    echo -e "
-${Menu_Title}
-
- ${FontColor_Green_Bold}0${FontColor_Suffix}. 返回主菜单
- -
- ${FontColor_Green_Bold}1${FontColor_Suffix}. 置换 IPv4 为 WARP 网络
- ${FontColor_Green_Bold}2${FontColor_Suffix}. 置换 IPv6 为 WARP 网络
- ${FontColor_Green_Bold}3${FontColor_Suffix}. 置换 IPv4/IPv6 为 WARP 网络 (IPv4 节点)
- ${FontColor_Green_Bold}4${FontColor_Suffix}. 置换 IPv4/IPv6 为 WARP 网络 (IPv6 节点)
- ${FontColor_Green_Bold}5${FontColor_Suffix}. 添加 WARP IPv4 网络，置换 IPv6 为 WARP 网络
- ${FontColor_Green_Bold}6${FontColor_Suffix}. 添加 WARP IPv6 网络，置换 IPv4 为 WARP 网络
-"
-    unset MenuNumber
-    read -p "请输入选项: " MenuNumber
-    echo
-    case ${MenuNumber} in
-    0)
-        Start_Menu
-        ;;
-    1)
-        Change_WARP_IPv4
-        ;;
-    2)
-        Change_WARP_IPv6
-        ;;
-    3)
-        Change_WARP_DualStack_IPv4Out
-        ;;
-    4)
-        Change_WARP_DualStack_IPv6Out
-        ;;
-    5)
-        Add_WARP_IPv4__Change_WARP_IPv6
-        ;;
-    6)
-        Add_WARP_IPv6__Change_WARP_IPv4
-        ;;
-    *)
-        log ERROR "无效输入！"
-        sleep 2s
-        Menu_DualStack
         ;;
     esac
 }
@@ -1299,38 +1092,42 @@ ${Menu_Title}
  IPv6 网络状态  : ${WARP_IPv6_Status_zh}
  -------------------------
 
- ${FontColor_Green_Bold}1${FontColor_Suffix}. 自动配置 WARP 官方客户端 SOCKS5 代理
- ${FontColor_Green_Bold}2${FontColor_Suffix}. 管理 WARP 官方客户端
+ ${FontColor_Green_Bold}1${FontColor_Suffix}. 安装 Cloudflare WARP 官方客户端
+ ${FontColor_Green_Bold}2${FontColor_Suffix}. 自动配置 WARP 客户端 SOCKS5 代理
+ ${FontColor_Green_Bold}3${FontColor_Suffix}. 管理 Cloudflare WARP 官方客户端
  -
- ${FontColor_Green_Bold}3${FontColor_Suffix}. 自动配置 WARP WireGuard IPv4 网络
- ${FontColor_Green_Bold}4${FontColor_Suffix}. 自动配置 WARP WireGuard IPv6 网络
- ${FontColor_Green_Bold}5${FontColor_Suffix}. 自动配置 WARP WireGuard 双栈全局网络
- ${FontColor_Green_Bold}6${FontColor_Suffix}. 选择其它 WARP WireGuard 配置方案
- ${FontColor_Green_Bold}7${FontColor_Suffix}. 管理 WARP WireGuard 网络
+ ${FontColor_Green_Bold}4${FontColor_Suffix}. 安装 WireGuard 相关组件
+ ${FontColor_Green_Bold}5${FontColor_Suffix}. 自动配置 WARP WireGuard IPv4 网络
+ ${FontColor_Green_Bold}6${FontColor_Suffix}. 自动配置 WARP WireGuard IPv6 网络
+ ${FontColor_Green_Bold}7${FontColor_Suffix}. 自动配置 WARP WireGuard 双栈全局网络
+ ${FontColor_Green_Bold}8${FontColor_Suffix}. 管理 WARP WireGuard 网络
 "
     unset MenuNumber
     read -p "请输入选项: " MenuNumber
     echo
     case ${MenuNumber} in
     1)
-        Enable_WARP_Client_Proxy
+        Install_WARP_Client
         ;;
     2)
-        Menu_WARP_Client
+        Enable_WARP_Client_Proxy
         ;;
     3)
-        Set_WARP_IPv4
+        Menu_WARP_Client
         ;;
     4)
-        Set_WARP_IPv6
+        Install_WireGuard
         ;;
     5)
-        Set_WARP_DualStack
+        Set_WARP_IPv4
         ;;
     6)
-        Menu_WARP_WireGuard_Other
+        Set_WARP_IPv6
         ;;
     7)
+        Set_WARP_DualStack
+        ;;
+    8)
         Menu_WARP_WireGuard
         ;;
     *)
