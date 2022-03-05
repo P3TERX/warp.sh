@@ -3,7 +3,7 @@
 # https://github.com/P3TERX/warp.sh
 # Description: Cloudflare WARP Installer
 # System Required: Debian, Ubuntu, Fedora, CentOS, Oracle Linux, Arch Linux
-# Version: beta34
+# Version: beta35
 #
 # MIT License
 #
@@ -28,7 +28,7 @@
 # SOFTWARE.
 #
 
-shVersion='beta34'
+shVersion='beta35'
 
 FontColor_Red="\033[31m"
 FontColor_Red_Bold="\033[1;31m"
@@ -77,7 +77,7 @@ if [[ -z $(command -v curl) ]]; then
 fi
 
 WGCF_Profile='wgcf-profile.conf'
-WGCF_ProfileDir="${HOME}/.wgcf"
+WGCF_ProfileDir="/etc/warp"
 WGCF_ProfilePath="${WGCF_ProfileDir}/${WGCF_Profile}"
 
 WireGuard_Interface='wgcf'
