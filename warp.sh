@@ -3,7 +3,7 @@
 # https://github.com/P3TERX/warp.sh
 # Description: Cloudflare WARP Installer
 # System Required: Debian, Ubuntu, Fedora, CentOS, Oracle Linux, Arch Linux
-# Version: beta35
+# Version: beta36
 #
 # MIT License
 #
@@ -28,7 +28,7 @@
 # SOFTWARE.
 #
 
-shVersion='beta35'
+shVersion='beta36'
 
 FontColor_Red="\033[31m"
 FontColor_Red_Bold="\033[1;31m"
@@ -451,6 +451,8 @@ Install_WireGuard() {
     if [[ ${WireGuard_SelfStart} != enabled || ${WireGuard_Status} != active ]]; then
         Install_WireGuardTools
         Install_WireGuardGo
+    else
+        log INFO "WireGuard is installed and running."
     fi
 }
 
