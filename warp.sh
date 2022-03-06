@@ -3,7 +3,7 @@
 # https://github.com/P3TERX/warp.sh
 # Description: Cloudflare WARP Installer
 # System Required: Debian, Ubuntu, Fedora, CentOS, Oracle Linux, Arch Linux
-# Version: beta37
+# Version: beta38
 #
 # MIT License
 #
@@ -28,7 +28,7 @@
 # SOFTWARE.
 #
 
-shVersion='beta37'
+shVersion='beta38'
 
 FontColor_Red="\033[31m"
 FontColor_Red_Bold="\033[1;31m"
@@ -842,6 +842,11 @@ Check_WARP_WireGuard_Status() {
         fi
         ;;
     esac
+    if [[ ${IPv4Status} = off && ${IPv6Status} = off ]]; then
+        log ERROR "Cloudflare WARP network anomaly, WireGuard tunnel established failed."
+        Disable_WireGuard
+        exit 1
+    fi
 }
 
 Check_ALL_Status() {
