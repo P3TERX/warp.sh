@@ -742,7 +742,7 @@ Check_WARP_Proxy_Status() {
     Check_WARP_Client
     if [[ ${WARP_Client_Status} = active ]]; then
         Get_WARP_Proxy_Port
-        WARP_Proxy_Status=$(curl -sx "socks5h://127.0.0.1:${WARP_Proxy_Port}" ${CF_Trace_URL} --connect-timeout 2 | grep warp | cut -d= -f2)
+        WARP_Proxy_Status=$(curl -sx "socks5h://0.0.0.0:${WARP_Proxy_Port}" ${CF_Trace_URL} --connect-timeout 2 | grep warp | cut -d= -f2)
     else
         unset WARP_Proxy_Status
     fi
