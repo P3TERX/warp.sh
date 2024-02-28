@@ -3,11 +3,11 @@
 # https://github.com/P3TERX/warp.sh
 # Description: Cloudflare WARP Installer
 # System Required: Debian, Ubuntu, Fedora, CentOS, Oracle Linux, Arch Linux
-# Version: beta39
+# Version: 1.0.40_Final
 #
 # MIT License
 #
-# Copyright (c) 2021-2022 P3TERX <https://p3terx.com>
+# Copyright (c) 2021-2024 P3TERX <https://p3terx.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,7 @@
 # SOFTWARE.
 #
 
-shVersion='beta39'
+shVersion='1.0.40_Final'
 
 FontColor_Red="\033[31m"
 FontColor_Red_Bold="\033[1;31m"

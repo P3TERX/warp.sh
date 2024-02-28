@@ -9,14 +9,18 @@ A Bash script that automatically installs and configures CloudFlare WARP in Linu
 - Automatically install CloudFlare WARP Official Linux Client
 - Quickly enable WARP Proxy Mode, access WARP network with SOCKS5
 - Automatically install WireGuard related components
-- Configuration WARP IPv4 Network interface (with WireGuard)
-- Configuration WARP IPv6 Network interface (with WireGuard)
-- Configuration WARP Dual Stack Network interface (with WireGuard)
+- Configuration WARP IPv4 Network interface (WireGuard Mode)
+- Configuration WARP IPv6 Network interface (WireGuard Mode)
+- Configuration WARP Dual Stack Network interface (WireGuard Mode)
 - ...
 
 ## Requirements
 
-*These are the requirements for WireGuard, see the [official page](https://pkg.cloudflareclient.com/packages/cloudflare-warp) for the CloudFlare WARP client requirements.*
+### WARP Official Linux Client
+
+Official WARP client support is currently limited to x86_64 platforms, see OS Support for details: https://pkg.cloudflareclient.com
+
+### WARP WireGuard Network Mode
 
 Supported distributions:
 
