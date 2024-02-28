@@ -83,10 +83,20 @@ WGCF_ProfilePath="${WGCF_ProfileDir}/${WGCF_Profile}"
 WireGuard_Interface='wgcf'
 WireGuard_ConfPath="/etc/wireguard/${WireGuard_Interface}.conf"
 
-WireGuard_Interface_DNS_IPv4='8.8.8.8,8.8.4.4'
-WireGuard_Interface_DNS_IPv6='2001:4860:4860::8888,2001:4860:4860::8844'
+# Set DNS
+if [ ! ${WireGuard_Interface_DNS_IPv4} ]
+then
+    WireGuard_Interface_DNS_IPv4='1.1.1.1,8.8.8.8'
+fi
+
+if [ ! ${WireGuard_Interface_DNS_IPv6} ]
+then
+    WireGuard_Interface_DNS_IPv6='2606:4700:4700::1111,2001:4860:4860::8888'
+fi
+
 WireGuard_Interface_DNS_46="${WireGuard_Interface_DNS_IPv4},${WireGuard_Interface_DNS_IPv6}"
 WireGuard_Interface_DNS_64="${WireGuard_Interface_DNS_IPv6},${WireGuard_Interface_DNS_IPv4}"
+echo "You have configured the DNS to $WireGuard_Interface_DNS_46."
 WireGuard_Interface_Rule_table='51888'
 WireGuard_Interface_Rule_fwmark='51888'
 WireGuard_Interface_MTU='1280'

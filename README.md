@@ -69,6 +69,16 @@ help            Prints this message or the help of the given subcommand(s)
 menu            Chinese special features menu
 ```
 
+### Configuring Custom DNS
+
+To configure custom DNS, set the environment variables `WireGuard_Interface_DNS_IPv4` and `WireGuard_Interface_DNS_IPv6`.
+
+```bash
+export WireGuard_Interface_DNS_IPv4 = '1.1.1.1,8.8.8.8'
+export WireGuard_Interface_DNS_IPv6 = '2606:4700:4700::1111,2001:4860:4860::8888'
+bash <(curl -fsSL git.io/warp.sh) proxy
+```
+
 ### Example
 
 - Install and automatically configure the Proxy Mode feature of the WARP client, enable the local loopback port 40000, and use an application that supports SOCKS5 to connect to this port.
